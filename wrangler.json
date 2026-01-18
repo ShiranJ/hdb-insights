@@ -1,7 +1,9 @@
 {
 	"name": "hdb-insights",
 	"compatibility_date": "2025-10-08",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"main": "./dist/_worker.js/index.js",
 	"assets": {
 		"directory": "./dist",
@@ -10,5 +12,23 @@
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "hdb-data",
+			"database_id": "29ec2080-870e-4988-b0da-b1a6813c5cdc"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "CACHE",
+			"id": "c72f389e120c48f09cfa3127d8742f74"
+		}
+	],
+	"triggers": {
+		"crons": [
+			"0 18 * * *"
+		]
+	}
 }

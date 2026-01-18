@@ -1,0 +1,512 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/tools.css';
+
+const title = 'Compare HDB Prices | HDB Insights';
+const description = 'Compare HDB resale prices across different estates, flat types, and time periods. Get real-time data from Singapore government APIs.';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={title} description={description} />
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+	</head>
+	<body>
+		<Header />
+		<main class="tool-container">
+			<div class="tool-header">
+				<h1>🏠 HDB Price Comparison</h1>
+				<p>Compare resale prices across different estates and flat types</p>
+			</div>
+
+			<!-- Filter Panel -->
+			<div class="filter-panel">
+				<div class="filter-row" style="flex-wrap: wrap;">
+					<!-- Estate Selectors -->
+					<div class="filter-group">
+						<label for="town1">Estate 1</label>
+						<select id="town1"><option value="">Select Estate</option></select>
+					</div>
+					<div class="filter-group">
+						<label for="town2">Estate 2 (Optional)</label>
+						<select id="town2"><option value="">Select Estate</option></select>
+					</div>
+					<div class="filter-group">
+						<label for="town3">Estate 3 (Optional)</label>
+						<select id="town3"><option value="">Select Estate</option></select>
+					</div>
+					<div class="filter-group">
+						<label for="town4">Estate 4 (Optional)</label>
+						<select id="town4"><option value="">Select Estate</option></select>
+					</div>
+
+					<div class="filter-group">
+						<label for="flat-type">Flat Type</label>
+						<select id="flat-type">
+							<option value="4 ROOM">4 Room</option>
+							<option value="3 ROOM">3 Room</option>
+							<option value="5 ROOM">5 Room</option>
+							<option value="EXECUTIVE">Executive</option>
+							<option value="2 ROOM">2 Room</option>
+						</select>
+					</div>
+					<div class="filter-group">
+						<label for="time-range">Time Range</label>
+						<select id="time-range">
+							<option value="1Y">1 Year</option>
+							<option value="6M">6 Months</option>
+							<option value="3M">3 Months</option>
+							<option value="3Y">3 Years</option>
+							<option value="5Y">5 Years</option>
+						</select>
+					</div>
+				</div>
+
+				<!-- Advanced Filters -->
+				<details class="advanced-filters" style="margin-top: 1rem; width: 100%;">
+					<summary style="cursor: pointer; color: var(--hdb-primary); font-weight: 500; margin-bottom: 0.5rem;">Advanced Filters (Storey, Area, Lease)</summary>
+					<div class="filter-row" style="padding-top: 0.5rem; border-top: 1px solid var(--hdb-border);">
+						<div class="filter-group">
+							<label for="storey">Storey Range</label>
+							<select id="storey">
+								<option value="">Any</option>
+								<option value="01 TO 03">01-03</option>
+								<option value="04 TO 06">04-06</option>
+								<option value="07 TO 09">07-09</option>
+								<option value="10 TO 12">10-12</option>
+								<option value="13 TO 15">13-15</option>
+								<option value="16 TO 18">16-18</option>
+								<option value="19 TO 21">19-21</option>
+								<option value="22 TO 24">22-24</option>
+								<option value="25 TO 27">25-27</option>
+								<option value="28 TO 30">28-30</option>
+								<option value="31 TO 33">31-33</option>
+								<option value="34 TO 36">34-36</option>
+								<option value="37 TO 39">37-39</option>
+								<option value="40 TO 42">40-42</option>
+							</select>
+						</div>
+						<div class="filter-group">
+							<label>Floor Area (sqm)</label>
+							<div style="display: flex; gap: 0.5rem; align-items: center;">
+								<input type="number" id="min-area" placeholder="Min" style="width: 70px;">
+								<span>-</span>
+								<input type="number" id="max-area" placeholder="Max" style="width: 70px;">
+							</div>
+						</div>
+						<div class="filter-group">
+							<label>Min Lease (Years)</label>
+							<input type="number" id="min-lease" placeholder="Min" style="width: 80px;">
+						</div>
+					</div>
+				</details>
+
+				<div class="filter-row" style="margin-top: 1rem; justify-content: flex-end;">
+					<button class="btn btn-primary" id="compare-btn">
+						Compare Prices
+					</button>
+				</div>
+			</div>
+			
+			<div id="last-updated" style="text-align: right; font-size: 0.8rem; color: var(--hdb-text-muted); margin-bottom: 1rem; display: none;">
+				Last Updated: <span id="updated-time">-</span>
+			</div>
+
+			<!-- Loading State -->
+			<div id="loading-state" style="display: none;">
+				<div class="cards-grid">
+					<div class="comparison-card">
+						<div class="loading-skeleton" style="height: 200px;"></div>
+					</div>
+					<div class="comparison-card">
+						<div class="loading-skeleton" style="height: 200px;"></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Empty State -->
+			<div id="empty-state" class="empty-state">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+				</svg>
+				<h3>Select estates to compare</h3>
+				<p>Choose at least one estate and click "Compare" to see price data</p>
+			</div>
+
+			<!-- Comparison Cards -->
+			<div id="cards-container" class="cards-grid" style="display: none;"></div>
+
+			<!-- Chart Section -->
+			<div id="chart-section" class="chart-container" style="display: none; margin-top: 2rem;">
+				<div class="chart-header">
+					<h3 class="chart-title">Price Trends Over Time</h3>
+					<div class="chart-controls">
+						<button data-metric="median_price" class="active">Median Price</button>
+						<button data-metric="avg_price">Avg Price</button>
+						<button data-metric="transaction_count">Volume</button>
+					</div>
+				</div>
+				<div style="height: 400px; position: relative; width: 100%;">
+					<canvas id="price-chart"></canvas>
+				</div>
+			</div>
+
+			<!-- Data Table -->
+			<div id="table-section" style="display: none; margin-top: 2rem;">
+				<div class="chart-container">
+					<div class="chart-header">
+						<h3 class="chart-title">Detailed Statistics</h3>
+						<button class="btn btn-secondary" id="export-csv">
+							📥 Export CSV
+						</button>
+					</div>
+					<div style="overflow-x: auto;">
+						<table id="data-table" style="width: 100%; border-collapse: collapse;">
+							<thead id="table-head"></thead>
+							<tbody id="table-body"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</main>
+		<Footer />
+
+		<script is:inline>
+			const HDB_TOWNS = [
+				'ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH',
+				'BUKIT PANJANG', 'BUKIT TIMAH', 'CENTRAL AREA', 'CHOA CHU KANG',
+				'CLEMENTI', 'GEYLANG', 'HOUGANG', 'JURONG EAST', 'JURONG WEST',
+				'KALLANG/WHAMPOA', 'MARINE PARADE', 'PASIR RIS', 'PUNGGOL',
+				'QUEENSTOWN', 'SEMBAWANG', 'SENGKANG', 'SERANGOON', 'TAMPINES',
+				'TOA PAYOH', 'WOODLANDS', 'YISHUN'
+			];
+
+			let priceChart = null;
+			let comparisonData = [];
+			let currentMetric = 'median_price';
+
+			// Initialize town dropdowns
+			function initDropdowns() {
+				const selects = ['town1', 'town2', 'town3', 'town4'];
+				selects.forEach((id, idx) => {
+					const select = document.getElementById(id);
+					HDB_TOWNS.forEach(town => {
+						const option = document.createElement('option');
+						option.value = town;
+						option.textContent = town.split(' ').map(w => 
+							w.charAt(0) + w.slice(1).toLowerCase()
+						).join(' ');
+						select.appendChild(option);
+					});
+					// Set default values
+					if (idx === 0) select.value = 'ANG MO KIO';
+					if (idx === 1) select.value = 'BEDOK';
+				});
+			}
+
+			// Fetch comparison data
+			async function fetchComparison(town, flatType, range, filters = {}) {
+				const params = new URLSearchParams({ 
+					town, flat_type: flatType, range,
+					...filters
+				});
+				const response = await fetch(`/api/comparison?${params}`);
+				if (!response.ok) throw new Error('Failed to fetch data');
+				return await response.json(); // Return full wrapper key { data: ..., cached_at: ... }
+			}
+
+			// Format currency
+			function formatCurrency(value) {
+				return new Intl.NumberFormat('en-SG', {
+					style: 'currency',
+					currency: 'SGD',
+					maximumFractionDigits: 0
+				}).format(value);
+			}
+
+			// Create comparison card
+			function createCard(data, town) {
+				const latest = data.data[0] || {};
+				const oldest = data.data[data.data.length - 1] || {};
+				const change = oldest.median_price 
+					? ((latest.median_price - oldest.median_price) / oldest.median_price * 100).toFixed(1)
+					: 0;
+
+				return `
+					<div class="comparison-card">
+						<div class="card-header">
+							<span class="card-title">${town.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')}</span>
+							<span class="card-badge">${data.flat_type}</span>
+						</div>
+						<div class="card-stats">
+							<div class="stat-item">
+								<div class="stat-label">Median Price</div>
+								<div class="stat-value">${formatCurrency(latest.median_price || 0)}</div>
+							</div>
+							<div class="stat-item">
+								<div class="stat-label">Transactions</div>
+								<div class="stat-value">${latest.transaction_count || 0}</div>
+							</div>
+							<div class="stat-item">
+								<div class="stat-label">Min Price</div>
+								<div class="stat-value">${formatCurrency(latest.min_price || 0)}</div>
+							</div>
+							<div class="stat-item">
+								<div class="stat-label">Max Price</div>
+								<div class="stat-value">${formatCurrency(latest.max_price || 0)}</div>
+							</div>
+							<div class="stat-item">
+								<div class="stat-label">Avg Lease</div>
+								<div class="stat-value">${latest.avg_lease ? latest.avg_lease + ' yrs' : '-'}</div>
+							</div>
+							<div class="stat-item">
+								<div class="stat-label">${data.range} Change</div>
+								<div class="stat-value ${parseFloat(change) >= 0 ? 'positive' : 'negative'}">
+									${parseFloat(change) >= 0 ? '↑' : '↓'} ${Math.abs(change)}%
+								</div>
+							</div>
+						</div>
+					</div>
+				`;
+			}
+
+			// Update chart
+			function updateChart() {
+				const ctx = document.getElementById('price-chart');
+				
+				if (priceChart) {
+					priceChart.destroy();
+				}
+
+				const datasets = comparisonData.map((item, idx) => {
+					const colors = ['#2563eb', '#0891b2', '#8b5cf6', '#22c55e'];
+					// Unwrap data.data (since item.response contains { data: ... })
+					// item.data is the actual inner data now (ComparisonResponse)
+					// Wait, fetchComparison returns wrapper { data: ..., cached_at: ... }
+					// In runComparison map: item.data = wrapper
+					// So item.data.data = ComparisonResponse
+					// item.data.data.data = Array
+					
+					return {
+						label: item.town,
+						data: item.data.data.data.slice().reverse().map(d => d[currentMetric]),
+						borderColor: colors[idx % colors.length],
+						backgroundColor: colors[idx % colors.length] + '20',
+						tension: 0.3,
+						fill: true
+					};
+				});
+
+				// Get labels from first dataset
+				const labels = comparisonData[0]?.data.data.data.slice().reverse().map(d => d.month) || [];
+
+				priceChart = new Chart(ctx, {
+					type: 'line',
+					data: { labels, datasets },
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: {
+							legend: { position: 'top' },
+							tooltip: {
+								callbacks: {
+									label: function(context) {
+										const label = context.dataset.label || '';
+										const value = context.raw;
+										if (currentMetric === 'transaction_count') {
+											return `${label}: ${value} transactions`;
+										}
+										return `${label}: ${formatCurrency(value)}`;
+									}
+								}
+							}
+						},
+						scales: {
+							y: {
+								ticks: {
+									callback: function(value) {
+										if (currentMetric === 'transaction_count') return value;
+										return '$' + (value / 1000).toFixed(0) + 'K';
+									}
+								}
+							}
+						}
+					}
+				});
+			}
+
+			// Generate table
+			function updateTable() {
+				const thead = document.getElementById('table-head');
+				const tbody = document.getElementById('table-body');
+
+				// Header
+				let headerHtml = '<tr><th style="text-align: left; padding: 0.75rem; border-bottom: 2px solid var(--hdb-border);">Month</th>';
+				comparisonData.forEach(item => {
+					headerHtml += `
+						<th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid var(--hdb-border);">${item.town} Median</th>
+						<th style="text-align: right; padding: 0.75rem; border-bottom: 2px solid var(--hdb-border);">${item.town} Vol</th>
+					`;
+				});
+				headerHtml += '</tr>';
+				thead.innerHTML = headerHtml;
+
+				// Body - merge data by month
+				const allMonths = new Set();
+				comparisonData.forEach(item => {
+					item.data.data.data.forEach(d => allMonths.add(d.month));
+				});
+
+				const sortedMonths = Array.from(allMonths).sort().reverse();
+				let bodyHtml = '';
+
+				sortedMonths.forEach(month => {
+					bodyHtml += `<tr><td style="padding: 0.75rem; border-bottom: 1px solid var(--hdb-border);">${month}</td>`;
+					comparisonData.forEach(item => {
+						const monthData = item.data.data.data.find(d => d.month === month);
+						bodyHtml += `
+							<td style="text-align: right; padding: 0.75rem; border-bottom: 1px solid var(--hdb-border);">
+								${monthData ? formatCurrency(monthData.median_price) : '-'}
+							</td>
+							<td style="text-align: right; padding: 0.75rem; border-bottom: 1px solid var(--hdb-border);">
+								${monthData ? monthData.transaction_count : '-'}
+							</td>
+						`;
+					});
+					bodyHtml += '</tr>';
+				});
+
+				tbody.innerHTML = bodyHtml;
+			}
+
+			// Export to CSV
+			function exportCSV() {
+				if (comparisonData.length === 0) return;
+
+				let csv = 'Month';
+				comparisonData.forEach(item => {
+					csv += `,${item.town} Median,${item.town} Avg,${item.town} Min,${item.town} Max,${item.town} Vol,${item.town} Lease`;
+				});
+				csv += '\n';
+
+				const allMonths = new Set();
+				comparisonData.forEach(item => {
+					item.data.data.data.forEach(d => allMonths.add(d.month));
+				});
+
+				Array.from(allMonths).sort().reverse().forEach(month => {
+					csv += month;
+					comparisonData.forEach(item => {
+						const d = item.data.data.data.find(x => x.month === month);
+						if (d) {
+							csv += `,${d.median_price},${d.avg_price},${d.min_price},${d.max_price},${d.transaction_count},${d.avg_lease || ''}`;
+						} else {
+							csv += ',,,,,,';
+						}
+					});
+					csv += '\n';
+				});
+
+				const blob = new Blob([csv], { type: 'text/csv' });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				a.download = `hdb-comparison-${new Date().toISOString().split('T')[0]}.csv`;
+				a.click();
+				URL.revokeObjectURL(url);
+			}
+
+			// Run comparison
+			async function runComparison() {
+				const town1 = document.getElementById('town1').value;
+				const town2 = document.getElementById('town2').value;
+				const town3 = document.getElementById('town3').value;
+				const town4 = document.getElementById('town4').value;
+				const flatType = document.getElementById('flat-type').value;
+				const range = document.getElementById('time-range').value;
+
+				// Collect filters
+				const filters = {
+					storey: document.getElementById('storey').value,
+					min_area: document.getElementById('min-area').value,
+					max_area: document.getElementById('max-area').value,
+					min_lease: document.getElementById('min-lease').value
+				};
+
+				if (!town1) {
+					alert('Please select at least one estate');
+					return;
+				}
+
+				// Show loading
+				document.getElementById('empty-state').style.display = 'none';
+				document.getElementById('loading-state').style.display = 'block';
+				document.getElementById('cards-container').style.display = 'none';
+				document.getElementById('chart-section').style.display = 'none';
+				document.getElementById('table-section').style.display = 'none';
+				document.getElementById('last-updated').style.display = 'none';
+
+				try {
+					const towns = [town1];
+					if (town2 && town2 !== town1) towns.push(town2);
+					if (town3 && town3 !== town1 && town3 !== town2) towns.push(town3);
+					if (town4 && town4 !== town1 && town4 !== town2 && town4 !== town3) towns.push(town4);
+
+					comparisonData = await Promise.all(
+						towns.map(async town => ({
+							town,
+							data: await fetchComparison(town, flatType, range, filters) // returns wrapper
+						}))
+					);
+
+					// Render cards (access data.data which is ComparisonResponse)
+					const cardsHtml = comparisonData.map(item => createCard(item.data.data, item.town)).join('');
+					document.getElementById('cards-container').innerHTML = cardsHtml;
+
+					// Display Last Updated
+					if (comparisonData[0] && comparisonData[0].data.cached_at) {
+						const dateStr = new Date(comparisonData[0].data.cached_at).toLocaleString();
+						document.getElementById('updated-time').textContent = dateStr;
+						document.getElementById('last-updated').style.display = 'block';
+					}
+
+					// Show results
+					document.getElementById('loading-state').style.display = 'none';
+					document.getElementById('cards-container').style.display = 'grid';
+					document.getElementById('chart-section').style.display = 'block';
+					document.getElementById('table-section').style.display = 'block';
+
+					updateChart();
+					updateTable();
+				} catch (error) {
+					console.error('Error:', error);
+					document.getElementById('loading-state').style.display = 'none';
+					document.getElementById('empty-state').style.display = 'block';
+					document.getElementById('empty-state').querySelector('h3').textContent = 'Error loading data';
+					document.getElementById('empty-state').querySelector('p').textContent = 'Please try again later. The database may not have data yet.';
+				}
+			}
+
+			// Initialize
+			document.addEventListener('DOMContentLoaded', () => {
+				initDropdowns();
+				
+				document.getElementById('compare-btn').addEventListener('click', runComparison);
+				document.getElementById('export-csv').addEventListener('click', exportCSV);
+				
+				// Chart metric controls
+				document.querySelectorAll('.chart-controls button').forEach(btn => {
+					btn.addEventListener('click', () => {
+						document.querySelectorAll('.chart-controls button').forEach(b => b.classList.remove('active'));
+						btn.classList.add('active');
+						currentMetric = btn.dataset.metric;
+						updateChart();
+					});
+				});
+			});
+		</script>
+	</body>
+</html>

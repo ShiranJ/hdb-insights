@@ -1,0 +1,407 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/tools.css';
+
+const title = 'Historical Price Trends | HDB Insights';
+const description = 'Analyze HDB resale price trends over time with interactive charts. View moving averages and identify market patterns.';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={title} description={description} />
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+	</head>
+	<body>
+		<Header />
+		<main class="tool-container">
+			<div class="tool-header">
+				<h1>📈 Historical Price Trends</h1>
+				<p>Analyze HDB resale price trends over time</p>
+			</div>
+
+			<!-- Filter Panel -->
+			<div class="filter-panel">
+				<div class="filter-row">
+					<div class="filter-group">
+						<label for="town">Estate</label>
+						<select id="town"></select>
+					</div>
+					<div class="filter-group">
+						<label for="flat-type">Flat Type</label>
+						<select id="flat-type">
+							<option value="4 ROOM">4 Room</option>
+							<option value="3 ROOM">3 Room</option>
+							<option value="5 ROOM">5 Room</option>
+							<option value="EXECUTIVE">Executive</option>
+							<option value="2 ROOM">2 Room</option>
+						</select>
+					</div>
+					<div class="filter-group">
+						<label>Time Range</label>
+						<div class="time-range-selector">
+							<button data-range="3M">3M</button>
+							<button data-range="6M">6M</button>
+							<button data-range="1Y" class="active">1Y</button>
+							<button data-range="3Y">3Y</button>
+							<button data-range="5Y">5Y</button>
+							<button data-range="MAX">All</button>
+						</div>
+					</div>
+					<div class="filter-group" style="flex: 0;">
+						<label>&nbsp;</label>
+						<button class="btn btn-primary" id="analyze-btn">
+							📊 Analyze
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Summary Cards -->
+			<div id="summary-cards" class="cards-grid" style="display: none; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 2rem;"></div>
+
+			<!-- Loading State -->
+			<div id="loading-state" style="display: none;">
+				<div class="chart-container">
+					<div class="loading-skeleton" style="height: 400px;"></div>
+				</div>
+			</div>
+
+			<!-- Empty State -->
+			<div id="empty-state" class="empty-state">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+				</svg>
+				<h3>Select an estate to analyze</h3>
+				<p>Choose an estate and flat type, then click "Analyze" to view price trends</p>
+			</div>
+
+			<!-- Chart Section -->
+			<div id="chart-section" style="display: none;">
+				<div class="chart-container">
+					<div class="chart-header">
+						<h3 class="chart-title">Median Price Trend</h3>
+						<div style="display: flex; gap: 1rem; align-items: center;">
+							<label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+								<input type="checkbox" id="show-ma" checked>
+								<span style="font-size: 0.875rem;">Show Moving Avg</span>
+							</label>
+							<button class="btn btn-secondary" id="export-chart" style="padding: 0.5rem 1rem;">
+								📥 Export
+							</button>
+						</div>
+					</div>
+					<div style="height: 400px;">
+						<canvas id="trend-chart"></canvas>
+					</div>
+				</div>
+
+				<!-- Volume Chart -->
+				<div class="chart-container" style="margin-top: 2rem;">
+					<div class="chart-header">
+						<h3 class="chart-title">Transaction Volume</h3>
+					</div>
+					<div style="height: 200px;">
+						<canvas id="volume-chart"></canvas>
+					</div>
+				</div>
+
+				<!-- Insights -->
+				<div id="insights-section" class="chart-container" style="margin-top: 2rem;">
+					<h3 class="chart-title" style="margin-bottom: 1rem;">📊 Key Insights</h3>
+					<div id="insights-content" style="display: grid; gap: 1rem;"></div>
+				</div>
+			</div>
+		</main>
+		<Footer />
+
+		<script is:inline>
+			const HDB_TOWNS = [
+				'ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH',
+				'BUKIT PANJANG', 'BUKIT TIMAH', 'CENTRAL AREA', 'CHOA CHU KANG',
+				'CLEMENTI', 'GEYLANG', 'HOUGANG', 'JURONG EAST', 'JURONG WEST',
+				'KALLANG/WHAMPOA', 'MARINE PARADE', 'PASIR RIS', 'PUNGGOL',
+				'QUEENSTOWN', 'SEMBAWANG', 'SENGKANG', 'SERANGOON', 'TAMPINES',
+				'TOA PAYOH', 'WOODLANDS', 'YISHUN'
+			];
+
+			let trendChart = null;
+			let volumeChart = null;
+			let currentRange = '1Y';
+			let currentData = null;
+
+			// Initialize
+			function init() {
+				const townSelect = document.getElementById('town');
+				HDB_TOWNS.forEach((town, idx) => {
+					const option = document.createElement('option');
+					option.value = town;
+					option.textContent = town.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+					if (idx === 0) option.selected = true;
+					townSelect.appendChild(option);
+				});
+
+				// Time range buttons
+				document.querySelectorAll('.time-range-selector button').forEach(btn => {
+					btn.addEventListener('click', () => {
+						document.querySelectorAll('.time-range-selector button').forEach(b => b.classList.remove('active'));
+						btn.classList.add('active');
+						currentRange = btn.dataset.range;
+						if (currentData) analyze();
+					});
+				});
+
+				document.getElementById('analyze-btn').addEventListener('click', analyze);
+				document.getElementById('show-ma').addEventListener('change', updateCharts);
+				document.getElementById('export-chart').addEventListener('click', exportChart);
+			}
+
+			// Format currency
+			function formatCurrency(value) {
+				return new Intl.NumberFormat('en-SG', {
+					style: 'currency',
+					currency: 'SGD',
+					maximumFractionDigits: 0
+				}).format(value);
+			}
+
+			// Analyze
+			async function analyze() {
+				const town = document.getElementById('town').value;
+				const flatType = document.getElementById('flat-type').value;
+
+				document.getElementById('empty-state').style.display = 'none';
+				document.getElementById('loading-state').style.display = 'block';
+				document.getElementById('chart-section').style.display = 'none';
+				document.getElementById('summary-cards').style.display = 'none';
+
+				try {
+					const params = new URLSearchParams({
+						town,
+						flat_type: flatType,
+						range: currentRange
+					});
+
+					const response = await fetch(`/api/trends?${params}`);
+					if (!response.ok) throw new Error('API error');
+					
+					const result = await response.json();
+					currentData = result.data;
+
+					document.getElementById('loading-state').style.display = 'none';
+
+					if (!currentData.data || currentData.data.length === 0) {
+						document.getElementById('empty-state').style.display = 'block';
+						document.getElementById('empty-state').querySelector('h3').textContent = 'No data available';
+						document.getElementById('empty-state').querySelector('p').textContent = 'No transactions found for this selection. Try a different estate or time range.';
+						return;
+					}
+
+					// Show summary cards
+					renderSummaryCards(currentData);
+					
+					// Show charts
+					document.getElementById('chart-section').style.display = 'block';
+					updateCharts();
+					
+					// Generate insights
+					generateInsights(currentData);
+
+				} catch (error) {
+					console.error('Analyze error:', error);
+					document.getElementById('loading-state').style.display = 'none';
+					document.getElementById('empty-state').style.display = 'block';
+					document.getElementById('empty-state').querySelector('h3').textContent = 'Error loading data';
+					document.getElementById('empty-state').querySelector('p').textContent = 'Please try again later.';
+				}
+			}
+
+			// Render summary cards
+			function renderSummaryCards(data) {
+				const summary = data.summary;
+				const changeClass = summary.total_change_pct >= 0 ? 'positive' : 'negative';
+				const changeIcon = summary.total_change_pct >= 0 ? '↑' : '↓';
+
+				const cards = [
+					{ label: 'Current Median', value: formatCurrency(summary.latest_median) },
+					{ label: `${currentRange} Change`, value: `${changeIcon} ${Math.abs(summary.total_change_pct)}%`, class: changeClass },
+					{ label: 'Starting Median', value: formatCurrency(summary.earliest_median) },
+					{ label: 'Avg Monthly Vol', value: summary.avg_monthly_transactions }
+				];
+
+				document.getElementById('summary-cards').innerHTML = cards.map(card => `
+					<div class="comparison-card" style="padding: 1rem;">
+						<div class="stat-item" style="padding: 0; background: none;">
+							<div class="stat-label">${card.label}</div>
+							<div class="stat-value ${card.class || ''}">${card.value}</div>
+						</div>
+					</div>
+				`).join('');
+
+				document.getElementById('summary-cards').style.display = 'grid';
+			}
+
+			// Update charts
+			function updateCharts() {
+				if (!currentData) return;
+
+				const showMA = document.getElementById('show-ma').checked;
+				const data = currentData.data;
+				const labels = data.map(d => d.month);
+
+				// Destroy existing charts
+				if (trendChart) trendChart.destroy();
+				if (volumeChart) volumeChart.destroy();
+
+				// Trend chart
+				const trendCtx = document.getElementById('trend-chart');
+				const datasets = [
+					{
+						label: 'Median Price',
+						data: data.map(d => d.median_price),
+						borderColor: '#2563eb',
+						backgroundColor: '#2563eb20',
+						tension: 0.3,
+						fill: true
+					}
+				];
+
+				if (showMA) {
+					datasets.push({
+						label: '3-Month Moving Avg',
+						data: data.map(d => d.moving_average),
+						borderColor: '#8b5cf6',
+						borderDash: [5, 5],
+						tension: 0.3,
+						fill: false,
+						pointRadius: 0
+					});
+				}
+
+				trendChart = new Chart(trendCtx, {
+					type: 'line',
+					data: { labels, datasets },
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: {
+							legend: { position: 'top' },
+							tooltip: {
+								callbacks: {
+									label: (ctx) => `${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`
+								}
+							}
+						},
+						scales: {
+							y: {
+								ticks: {
+									callback: (v) => '$' + (v / 1000).toFixed(0) + 'K'
+								}
+							}
+						}
+					}
+				});
+
+				// Volume chart
+				const volumeCtx = document.getElementById('volume-chart');
+				volumeChart = new Chart(volumeCtx, {
+					type: 'bar',
+					data: {
+						labels,
+						datasets: [{
+							label: 'Transactions',
+							data: data.map(d => d.transaction_count),
+							backgroundColor: '#0891b280',
+							borderColor: '#0891b2',
+							borderWidth: 1
+						}]
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: {
+							legend: { display: false }
+						}
+					}
+				});
+			}
+
+			// Generate insights
+			function generateInsights(data) {
+				const summary = data.summary;
+				const prices = data.data.map(d => d.median_price);
+				const volumes = data.data.map(d => d.transaction_count);
+
+				const insights = [];
+
+				// Price trend insight
+				if (summary.total_change_pct > 5) {
+					insights.push({
+						icon: '📈',
+						title: 'Strong Upward Trend',
+						text: `Prices have increased by ${summary.total_change_pct}% over this period. This area shows strong appreciation.`
+					});
+				} else if (summary.total_change_pct < -5) {
+					insights.push({
+						icon: '📉',
+						title: 'Downward Trend',
+						text: `Prices have decreased by ${Math.abs(summary.total_change_pct)}%. This could present buying opportunities.`
+					});
+				} else {
+					insights.push({
+						icon: '➡️',
+						title: 'Stable Prices',
+						text: `Prices have remained relatively stable with only ${Math.abs(summary.total_change_pct)}% change.`
+					});
+				}
+
+				// Volume insight
+				const avgVolume = summary.avg_monthly_transactions;
+				const recentVolume = volumes.slice(-3).reduce((a, b) => a + b, 0) / 3;
+				if (recentVolume > avgVolume * 1.2) {
+					insights.push({
+						icon: '🔥',
+						title: 'High Activity',
+						text: `Recent transaction volume is ${Math.round((recentVolume / avgVolume - 1) * 100)}% above average. High demand in this area.`
+					});
+				} else if (recentVolume < avgVolume * 0.8) {
+					insights.push({
+						icon: '💤',
+						title: 'Lower Activity',
+						text: `Recent transaction volume is below average. Fewer units changing hands.`
+					});
+				}
+
+				// Price point insight
+				insights.push({
+					icon: '💰',
+					title: 'Current Price Point',
+					text: `The current median price of ${formatCurrency(summary.latest_median)} translates to approximately ${formatCurrency(summary.latest_median / 99 * 12)} per year of lease remaining.`
+				});
+
+				document.getElementById('insights-content').innerHTML = insights.map(i => `
+					<div style="display: flex; gap: 1rem; padding: 1rem; background: var(--hdb-bg-elevated); border-radius: 8px;">
+						<div style="font-size: 1.5rem;">${i.icon}</div>
+						<div>
+							<div style="font-weight: 600; margin-bottom: 0.25rem;">${i.title}</div>
+							<div style="font-size: 0.875rem; color: var(--hdb-text-muted);">${i.text}</div>
+						</div>
+					</div>
+				`).join('');
+			}
+
+			// Export chart
+			function exportChart() {
+				const canvas = document.getElementById('trend-chart');
+				const link = document.createElement('a');
+				link.download = `hdb-trend-${document.getElementById('town').value}-${new Date().toISOString().split('T')[0]}.png`;
+				link.href = canvas.toDataURL('image/png');
+				link.click();
+			}
+
+			document.addEventListener('DOMContentLoaded', init);
+		</script>
+	</body>
+</html>

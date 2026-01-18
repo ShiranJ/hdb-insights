@@ -1,0 +1,367 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/tools.css';
+
+const title = 'Value Score Calculator | HDB Insights';
+const description = 'Find the best value HDB flats with our automated scoring system. Scores based on price, location, lease, and amenities.';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={title} description={description} />
+	</head>
+	<body>
+		<Header />
+		<main class="tool-container">
+			<div class="tool-header">
+				<h1>📊 Value Score Calculator</h1>
+				<p>Find the best value HDB units based on multiple factors</p>
+			</div>
+
+			<!-- Filter Panel -->
+			<div class="filter-panel">
+				<div class="filter-row">
+					<div class="filter-group">
+						<label for="min-score">Minimum Score</label>
+						<select id="min-score">
+							<option value="0">Any Score</option>
+							<option value="50">50+ (Fair Value)</option>
+							<option value="65" selected>65+ (Good Value)</option>
+							<option value="80">80+ (Excellent)</option>
+						</select>
+					</div>
+					<div class="filter-group">
+						<label for="budget-min">Min Budget</label>
+						<input type="number" id="budget-min" placeholder="e.g. 300000" step="10000">
+					</div>
+					<div class="filter-group">
+						<label for="budget-max">Max Budget</label>
+						<input type="number" id="budget-max" placeholder="e.g. 600000" step="10000">
+					</div>
+					<div class="filter-group">
+						<label for="flat-types">Flat Types</label>
+						<select id="flat-types" multiple>
+							<option value="3 ROOM">3 Room</option>
+							<option value="4 ROOM" selected>4 Room</option>
+							<option value="5 ROOM" selected>5 Room</option>
+							<option value="EXECUTIVE">Executive</option>
+						</select>
+					</div>
+					<div class="filter-group" style="flex: 0;">
+						<label>&nbsp;</label>
+						<button class="btn btn-primary" id="search-btn">
+							🔍 Find Best Values
+						</button>
+					</div>
+				</div>
+
+				<details style="margin-top: 1rem;">
+					<summary style="cursor: pointer; color: var(--hdb-text-muted);">
+						Filter by Towns (click to expand)
+					</summary>
+					<div id="towns-filter" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;"></div>
+				</details>
+			</div>
+
+			<!-- Score Legend -->
+			<div style="display: flex; gap: 1.5rem; justify-content: center; margin-bottom: 2rem; flex-wrap: wrap;">
+				<div style="display: flex; align-items: center; gap: 0.5rem;">
+					<div style="width: 20px; height: 20px; border-radius: 50%; background: #22c55e;"></div>
+					<span style="font-size: 0.875rem; color: var(--hdb-text-muted);">80+ Excellent</span>
+				</div>
+				<div style="display: flex; align-items: center; gap: 0.5rem;">
+					<div style="width: 20px; height: 20px; border-radius: 50%; background: #84cc16;"></div>
+					<span style="font-size: 0.875rem; color: var(--hdb-text-muted);">65-79 Good</span>
+				</div>
+				<div style="display: flex; align-items: center; gap: 0.5rem;">
+					<div style="width: 20px; height: 20px; border-radius: 50%; background: #eab308;"></div>
+					<span style="font-size: 0.875rem; color: var(--hdb-text-muted);">50-64 Fair</span>
+				</div>
+				<div style="display: flex; align-items: center; gap: 0.5rem;">
+					<div style="width: 20px; height: 20px; border-radius: 50%; background: #f97316;"></div>
+					<span style="font-size: 0.875rem; color: var(--hdb-text-muted);">35-49 Below Avg</span>
+				</div>
+			</div>
+
+			<!-- Loading State -->
+			<div id="loading-state" style="display: none;">
+				<div class="cards-grid">
+					{[1, 2, 3, 4].map(() => (
+						<div class="comparison-card">
+							<div class="loading-skeleton" style="height: 180px;"></div>
+						</div>
+					))}
+				</div>
+			</div>
+
+			<!-- Empty State -->
+			<div id="empty-state" class="empty-state">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+				</svg>
+				<h3>Set your preferences</h3>
+				<p>Adjust the filters above and click "Find Best Values" to discover high-value HDB units</p>
+			</div>
+
+			<!-- Results -->
+			<div id="results-container" style="display: none;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+					<h3 style="margin: 0; color: var(--hdb-text);">
+						<span id="results-count">0</span> Results Found
+					</h3>
+					<div style="color: var(--hdb-text-muted); font-size: 0.875rem;">
+						Sorted by Total Score
+					</div>
+				</div>
+				<div id="results-grid" class="cards-grid"></div>
+			</div>
+
+			<!-- Score Breakdown Modal -->
+			<div id="score-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+				<div style="background: var(--hdb-bg-card); border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+						<h3 style="margin: 0;">Score Breakdown</h3>
+						<button id="close-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--hdb-text-muted);">&times;</button>
+					</div>
+					<div id="modal-content"></div>
+				</div>
+			</div>
+		</main>
+		<Footer />
+
+		<script is:inline>
+			const HDB_TOWNS = [
+				'ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH',
+				'BUKIT PANJANG', 'BUKIT TIMAH', 'CENTRAL AREA', 'CHOA CHU KANG',
+				'CLEMENTI', 'GEYLANG', 'HOUGANG', 'JURONG EAST', 'JURONG WEST',
+				'KALLANG/WHAMPOA', 'MARINE PARADE', 'PASIR RIS', 'PUNGGOL',
+				'QUEENSTOWN', 'SEMBAWANG', 'SENGKANG', 'SERANGOON', 'TAMPINES',
+				'TOA PAYOH', 'WOODLANDS', 'YISHUN'
+			];
+
+			let selectedTowns = new Set();
+
+			// Initialize towns filter
+			function initTownsFilter() {
+				const container = document.getElementById('towns-filter');
+				HDB_TOWNS.forEach(town => {
+					const btn = document.createElement('button');
+					btn.className = 'btn btn-secondary';
+					btn.style.padding = '0.5rem 0.75rem';
+					btn.style.fontSize = '0.75rem';
+					btn.textContent = town.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+					btn.dataset.town = town;
+					btn.addEventListener('click', () => {
+						if (selectedTowns.has(town)) {
+							selectedTowns.delete(town);
+							btn.style.background = '';
+							btn.style.color = '';
+						} else {
+							selectedTowns.add(town);
+							btn.style.background = 'var(--hdb-primary)';
+							btn.style.color = 'white';
+						}
+					});
+					container.appendChild(btn);
+				});
+			}
+
+			// Format currency
+			function formatCurrency(value) {
+				if (!value) return '-';
+				return new Intl.NumberFormat('en-SG', {
+					style: 'currency',
+					currency: 'SGD',
+					maximumFractionDigits: 0
+				}).format(value);
+			}
+
+			// Get score color
+			function getScoreColor(score) {
+				if (score >= 80) return '#22c55e';
+				if (score >= 65) return '#84cc16';
+				if (score >= 50) return '#eab308';
+				if (score >= 35) return '#f97316';
+				return '#ef4444';
+			}
+
+			// Get score label
+			function getScoreLabel(score) {
+				if (score >= 80) return 'Excellent Value';
+				if (score >= 65) return 'Good Value';
+				if (score >= 50) return 'Fair Value';
+				if (score >= 35) return 'Below Average';
+				return 'Poor Value';
+			}
+
+			// Create result card
+			function createResultCard(item) {
+				const scoreColor = getScoreColor(item.total_score);
+				const address = `Blk ${item.block} ${item.street_name.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')}`;
+				const town = item.town.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+
+				return `
+					<div class="comparison-card" style="cursor: pointer;" onclick="showScoreBreakdown(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+						<div class="card-header">
+							<div>
+								<div class="card-title" style="font-size: 1rem;">${address}</div>
+								<div style="font-size: 0.875rem; color: var(--hdb-text-muted);">${town} • ${item.flat_type}</div>
+							</div>
+							<div class="score-badge" style="background: ${scoreColor};">
+								${Math.round(item.total_score)}
+							</div>
+						</div>
+						<div class="card-stats" style="grid-template-columns: repeat(3, 1fr);">
+							<div class="stat-item">
+								<div class="stat-label">Price</div>
+								<div class="stat-value" style="font-size: 1rem;">${formatCurrency(item.resale_price)}</div>
+							</div>
+							<div class="stat-item">
+								<div class="stat-label">Size</div>
+								<div class="stat-value" style="font-size: 1rem;">${item.floor_area_sqm || '-'} sqm</div>
+							</div>
+							<div class="stat-item">
+								<div class="stat-label">MRT</div>
+								<div class="stat-value" style="font-size: 1rem;">${item.mrt_distance ? item.mrt_distance + 'm' : '-'}</div>
+							</div>
+						</div>
+						<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--hdb-border);">
+							<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+								<span style="padding: 0.25rem 0.5rem; background: var(--hdb-bg-elevated); border-radius: 4px; font-size: 0.75rem;">
+									💰 Price: ${item.price_score}
+								</span>
+								<span style="padding: 0.25rem 0.5rem; background: var(--hdb-bg-elevated); border-radius: 4px; font-size: 0.75rem;">
+									📍 Location: ${item.location_score}
+								</span>
+								<span style="padding: 0.25rem 0.5rem; background: var(--hdb-bg-elevated); border-radius: 4px; font-size: 0.75rem;">
+									📅 Lease: ${item.lease_score}
+								</span>
+							</div>
+						</div>
+					</div>
+				`;
+			}
+
+			// Show score breakdown modal
+			window.showScoreBreakdown = function(item) {
+				const modal = document.getElementById('score-modal');
+				const content = document.getElementById('modal-content');
+				const scoreColor = getScoreColor(item.total_score);
+
+				const factors = [
+					{ name: 'Price vs Median', score: item.price_score, weight: '30%', desc: 'How the price compares to town median' },
+					{ name: 'MRT Proximity', score: item.location_score, weight: '25%', desc: 'Distance to nearest MRT station' },
+					{ name: 'Remaining Lease', score: item.lease_score, weight: '20%', desc: 'Years remaining on lease' },
+					{ name: 'Appreciation', score: item.appreciation_score, weight: '15%', desc: 'Historical price growth trend' },
+					{ name: 'Amenities', score: item.amenities_score, weight: '10%', desc: 'Nearby schools, malls, parks' }
+				];
+
+				content.innerHTML = `
+					<div style="text-align: center; margin-bottom: 1.5rem;">
+						<div class="score-badge" style="background: ${scoreColor}; width: 80px; height: 80px; font-size: 2rem; margin: 0 auto 0.5rem;">
+							${Math.round(item.total_score)}
+						</div>
+						<div style="font-weight: 600; color: ${scoreColor};">${getScoreLabel(item.total_score)}</div>
+					</div>
+
+					<div style="background: var(--hdb-bg-elevated); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+						<div style="font-weight: 600; margin-bottom: 0.5rem;">Blk ${item.block} ${item.street_name}</div>
+						<div style="font-size: 0.875rem; color: var(--hdb-text-muted);">
+							${item.town} • ${item.flat_type} • ${formatCurrency(item.resale_price)}
+						</div>
+					</div>
+
+					<div class="score-breakdown">
+						${factors.map(f => `
+							<div class="score-row">
+								<div class="score-row-label">${f.name}</div>
+								<div class="score-bar">
+									<div class="score-bar-fill" style="width: ${f.score}%; background: ${getScoreColor(f.score)};"></div>
+								</div>
+								<div class="score-row-value">${f.score}</div>
+							</div>
+						`).join('')}
+					</div>
+
+					<div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--hdb-border);">
+						<h4 style="margin: 0 0 0.5rem 0; font-size: 0.875rem;">How scores are calculated:</h4>
+						<ul style="margin: 0; padding-left: 1.25rem; font-size: 0.875rem; color: var(--hdb-text-muted);">
+							<li><strong>Price (30%)</strong>: 100 if 30% below median, 0 if 50% above</li>
+							<li><strong>Location (25%)</strong>: 100 if &lt;200m to MRT, 0 if &gt;1km</li>
+							<li><strong>Lease (20%)</strong>: 100 if 90+ years, 0 if &lt;30 years</li>
+							<li><strong>Appreciation (15%)</strong>: Based on historical price trends</li>
+							<li><strong>Amenities (10%)</strong>: Nearby schools, malls, parks, hawkers</li>
+						</ul>
+					</div>
+				`;
+
+				modal.style.display = 'flex';
+			};
+
+			// Search
+			async function search() {
+				const minScore = document.getElementById('min-score').value;
+				const budgetMin = document.getElementById('budget-min').value;
+				const budgetMax = document.getElementById('budget-max').value;
+				const flatTypesSelect = document.getElementById('flat-types');
+				const flatTypes = Array.from(flatTypesSelect.selectedOptions).map(o => o.value);
+
+				// Build params
+				const params = new URLSearchParams();
+				params.set('min_score', minScore);
+				if (budgetMin) params.set('budget_min', budgetMin);
+				if (budgetMax) params.set('budget_max', budgetMax);
+				if (flatTypes.length > 0) params.set('flat_types', flatTypes.join(','));
+				if (selectedTowns.size > 0) params.set('towns', Array.from(selectedTowns).join(','));
+				params.set('limit', '20');
+
+				// Show loading
+				document.getElementById('empty-state').style.display = 'none';
+				document.getElementById('loading-state').style.display = 'block';
+				document.getElementById('results-container').style.display = 'none';
+
+				try {
+					const response = await fetch(`/api/calculator?${params}`);
+					if (!response.ok) throw new Error('API error');
+					const data = await response.json();
+
+					document.getElementById('loading-state').style.display = 'none';
+
+					if (data.results.length === 0) {
+						document.getElementById('empty-state').style.display = 'block';
+						document.getElementById('empty-state').querySelector('h3').textContent = 'No results found';
+						document.getElementById('empty-state').querySelector('p').textContent = 'Try adjusting your filters or check back later as more data is imported.';
+					} else {
+						document.getElementById('results-count').textContent = data.count;
+						document.getElementById('results-grid').innerHTML = data.results.map(createResultCard).join('');
+						document.getElementById('results-container').style.display = 'block';
+					}
+				} catch (error) {
+					console.error('Search error:', error);
+					document.getElementById('loading-state').style.display = 'none';
+					document.getElementById('empty-state').style.display = 'block';
+					document.getElementById('empty-state').querySelector('h3').textContent = 'Error loading data';
+					document.getElementById('empty-state').querySelector('p').textContent = 'The database may not have scored units yet. Please run the data sync first.';
+				}
+			}
+
+			// Initialize
+			document.addEventListener('DOMContentLoaded', () => {
+				initTownsFilter();
+				
+				document.getElementById('search-btn').addEventListener('click', search);
+				document.getElementById('close-modal').addEventListener('click', () => {
+					document.getElementById('score-modal').style.display = 'none';
+				});
+				document.getElementById('score-modal').addEventListener('click', (e) => {
+					if (e.target.id === 'score-modal') {
+						document.getElementById('score-modal').style.display = 'none';
+					}
+				});
+			});
+		</script>
+	</body>
+</html>
