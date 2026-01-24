@@ -15,6 +15,7 @@
 	font-style: normal;
 	font-display: swap;
 }
+
 @font-face {
 	font-family: "Atkinson";
 	src: url("/fonts/atkinson-bold.woff") format("woff");
@@ -25,6 +26,7 @@
 
 /* Base layer - Mobile first approach */
 @layer base {
+
 	*,
 	*::before,
 	*::after {
@@ -38,6 +40,9 @@
 	body {
 		@apply font-sans antialiased;
 		@apply text-hdb-text bg-hdb-bg;
+		/* Uses new warm gray / zinc-900 */
+		@apply dark:bg-hdb-dark-bg dark:text-hdb-dark-text;
+		/* Explicit dark mode support if classes generated */
 		line-height: 1.6;
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
@@ -61,6 +66,7 @@
 
 /* Component layer */
 @layer components {
+
 	/* Container component */
 	.container {
 		@apply mx-auto px-4 sm:px-6 lg:px-8;
@@ -74,7 +80,8 @@
 		@apply border border-transparent;
 		@apply transition-all duration-200 ease-in-out;
 		@apply focus:outline-none focus:ring-2 focus:ring-offset-2;
-		min-height: 44px; /* Touch target size */
+		min-height: 44px;
+		/* Touch target size */
 	}
 
 	.btn-primary {
@@ -113,6 +120,7 @@
 
 /* Utility layer */
 @layer utilities {
+
 	/* Text utilities */
 	.text-balance {
 		text-wrap: balance;
@@ -124,8 +132,15 @@
 	}
 
 	@keyframes fadeIn {
-		from { opacity: 0; transform: translateY(10px); }
-		to { opacity: 1; transform: translateY(0); }
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	/* Mobile menu overlay */
@@ -181,7 +196,7 @@ pre {
 	border-radius: 8px;
 }
 
-pre > code {
+pre>code {
 	all: unset;
 }
 

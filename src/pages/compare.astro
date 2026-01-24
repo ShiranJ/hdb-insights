@@ -1,22 +1,16 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import Layout from '../layouts/Layout.astro';
 import '../styles/tools.css';
 
 const title = 'Compare HDB Prices | HDB Insights';
 const description = 'Compare HDB resale prices across different estates, flat types, and time periods. Get real-time data from Singapore government APIs.';
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={title} description={description} />
-		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-	</head>
-	<body>
-		<Header />
-		<main class="tool-container">
+<Layout title={title} description={description}>
+	<!-- Note: Global styles are already in Layout, but keeping tools.css import for specific tool styles if not yet refactored -->
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" slot="head"></script>
+	
+	<div class="tool-container">
 			<div class="tool-header">
 				<h1>
 					<svg class="w-8 h-8 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -207,9 +201,9 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 				</div>
 			</div>
 		</main>
-		<Footer />
+		</main>
 
-		<script is:inline>
+		<script>
 			const HDB_TOWNS = [
 				'ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH',
 				'BUKIT PANJANG', 'BUKIT TIMAH', 'CENTRAL AREA', 'CHOA CHU KANG',
@@ -579,36 +573,47 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 			}
 
 			// Initialize
-			document.addEventListener('DOMContentLoaded', () => {
+			document.addEventListener('astro:page-load', () => {
 				initDropdowns();
 				loadFromURL();
 				checkSyncStatus();
 				
-				document.getElementById('compare-btn').addEventListener('click', () => {
-					runComparison();
-					syncURL();
-				});
+				const compareBtn = document.getElementById('compare-btn');
+				if (compareBtn) {
+					compareBtn.addEventListener('click', () => {
+						runComparison();
+						syncURL();
+					});
+				}
 				
-				document.getElementById('refresh-btn').addEventListener('click', () => {
-					// Clear cache manually by bumping internal ver? 
-					// For now just re-run with current filters
-					runComparison();
-				});
+				const refreshBtn = document.getElementById('refresh-btn');
+				if (refreshBtn) {
+					refreshBtn.addEventListener('click', () => {
+						runComparison();
+					});
+				}
 
-				document.getElementById('export-csv').addEventListener('click', exportCSV);
+				const exportCsvBtn = document.getElementById('export-csv');
+				if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportCSV);
 				
-				document.getElementById('download-png').addEventListener('click', () => {
-					const canvas = document.getElementById('price-chart');
-					const link = document.createElement('a');
-					link.download = `hdb-price-trend-${new Date().toISOString().split('T')[0]}.png`;
-					link.href = canvas.toDataURL('image/png');
-					link.click();
-				});
+				const downloadPngBtn = document.getElementById('download-png');
+				if (downloadPngBtn) {
+					downloadPngBtn.addEventListener('click', () => {
+						const canvas = document.getElementById('price-chart');
+						const link = document.createElement('a');
+						link.download = `hdb-price-trend-${new Date().toISOString().split('T')[0]}.png`;
+						link.href = canvas.toDataURL('image/png');
+						link.click();
+					});
+				}
 
-				document.getElementById('share-link').addEventListener('click', () => {
-					navigator.clipboard.writeText(window.location.href);
-					alert('Comparison link copied to clipboard!');
-				});
+				const shareLinkBtn = document.getElementById('share-link');
+				if (shareLinkBtn) {
+					shareLinkBtn.addEventListener('click', () => {
+						navigator.clipboard.writeText(window.location.href);
+						alert('Comparison link copied to clipboard!');
+					});
+				}
 
 				// Chart metric controls
 				document.querySelectorAll('.chart-controls button[data-metric]').forEach(btn => {
@@ -621,5 +626,5 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 				});
 			});
 		</script>
-	</body>
-</html>
+	</div>
+</Layout>

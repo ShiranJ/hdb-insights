@@ -1,21 +1,13 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import Layout from '../layouts/Layout.astro';
 import '../styles/tools.css';
 
 const title = 'Value Score Calculator | HDB Insights';
 const description = 'Find the best value HDB flats with our automated scoring system. Scores based on price, location, lease, and amenities.';
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={title} description={description} />
-	</head>
-	<body>
-		<Header />
-		<main class="tool-container">
+<Layout title={title} description={description}>
+	<div class="tool-container">
 			<div class="tool-header">
 				<h1>
 					<svg class="w-8 h-8 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -138,9 +130,9 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 				</div>
 			</div>
 		</main>
-		<Footer />
+		</main>
 
-		<script is:inline>
+		<script>
 			const HDB_TOWNS = [
 				'ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH',
 				'BUKIT PANJANG', 'BUKIT TIMAH', 'CENTRAL AREA', 'CHOA CHU KANG',
@@ -155,6 +147,11 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 			// Initialize towns filter
 			function initTownsFilter() {
 				const container = document.getElementById('towns-filter');
+				if (!container) return;
+				
+				container.innerHTML = '';
+				selectedTowns = new Set();
+
 				HDB_TOWNS.forEach(town => {
 					const btn = document.createElement('button');
 					btn.className = 'btn btn-secondary';
@@ -210,9 +207,10 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 				const scoreColor = getScoreColor(item.total_score);
 				const address = `Blk ${item.block} ${item.street_name.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')}`;
 				const town = item.town.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
+				const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
 
 				return `
-					<div class="comparison-card" style="cursor: pointer;" onclick="showScoreBreakdown(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+					<div class="comparison-card" style="cursor: pointer;" onclick="window.showScoreBreakdown(${itemJson})">
 						<div class="card-header">
 							<div>
 								<div class="card-title" style="font-size: 1rem;">${address}</div>
@@ -257,6 +255,8 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 			window.showScoreBreakdown = function(item) {
 				const modal = document.getElementById('score-modal');
 				const content = document.getElementById('modal-content');
+				if (!modal || !content) return;
+
 				const scoreColor = getScoreColor(item.total_score);
 
 				const factors = [
@@ -357,19 +357,24 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 			}
 
 			// Initialize
-			document.addEventListener('DOMContentLoaded', () => {
+			document.addEventListener('astro:page-load', () => {
 				initTownsFilter();
 				
-				document.getElementById('search-btn').addEventListener('click', search);
-				document.getElementById('close-modal').addEventListener('click', () => {
+				const searchBtn = document.getElementById('search-btn');
+				if (searchBtn) searchBtn.addEventListener('click', search);
+
+				const closeModal = document.getElementById('close-modal');
+				if (closeModal) closeModal.addEventListener('click', () => {
 					document.getElementById('score-modal').style.display = 'none';
 				});
-				document.getElementById('score-modal').addEventListener('click', (e) => {
+
+				const scoreModal = document.getElementById('score-modal');
+				if (scoreModal) scoreModal.addEventListener('click', (e) => {
 					if (e.target.id === 'score-modal') {
 						document.getElementById('score-modal').style.display = 'none';
 					}
 				});
 			});
 		</script>
-	</body>
-</html>
+	</div>
+</Layout>

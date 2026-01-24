@@ -1,22 +1,14 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
+import Layout from '../layouts/Layout.astro';
 import '../styles/tools.css';
 
 const title = 'Historical Price Trends | HDB Insights';
 const description = 'Analyze HDB resale price trends over time with interactive charts. View moving averages and identify market patterns.';
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={title} description={description} />
-		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-	</head>
-	<body>
-		<Header />
-		<main class="tool-container">
+<Layout title={title} description={description}>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" slot="head"></script>
+	<div class="tool-container">
 			<div class="tool-header">
 				<h1>
 					<svg class="w-8 h-8 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -131,9 +123,9 @@ const description = 'Analyze HDB resale price trends over time with interactive 
 				</div>
 			</div>
 		</main>
-		<Footer />
+		</main>
 
-		<script is:inline>
+		<script>
 			const HDB_TOWNS = [
 				'ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH',
 				'BUKIT PANJANG', 'BUKIT TIMAH', 'CENTRAL AREA', 'CHOA CHU KANG',
@@ -417,7 +409,7 @@ const description = 'Analyze HDB resale price trends over time with interactive 
 				link.click();
 			}
 
-			document.addEventListener('DOMContentLoaded', init);
+			document.addEventListener('astro:page-load', init);
 		</script>
-	</body>
-</html>
+	</div>
+</Layout>
