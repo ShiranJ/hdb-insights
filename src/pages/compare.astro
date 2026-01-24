@@ -18,7 +18,12 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 		<Header />
 		<main class="tool-container">
 			<div class="tool-header">
-				<h1>🏠 HDB Price Comparison</h1>
+				<h1>
+					<svg class="w-8 h-8 inline mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+					</svg>
+					HDB Price Comparison
+				</h1>
 				<p>Compare resale prices across different estates and flat types</p>
 			</div>
 
@@ -106,7 +111,10 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 
 				<div class="filter-row" style="margin-top: 1rem; justify-content: flex-end; align-items: center; gap: 1rem;">
 					<button class="btn btn-secondary" id="refresh-btn" title="Refresh data from server">
-						🔄 Refresh
+						<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+						</svg>
+						Refresh
 					</button>
 					<button class="btn btn-primary" id="compare-btn">
 						Compare Prices
@@ -116,7 +124,10 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 			
 			<div style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-bottom: 1rem;">
 				<div id="sync-badge" style="display: none; font-size: 0.8rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 99px; background: var(--hdb-primary); color: white;">
-					✨ <span id="new-count">0</span> new transactions synced
+					<svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+					</svg>
+					<span id="new-count">0</span> new transactions synced
 				</div>
 				<div id="last-updated" style="font-size: 0.8rem; color: var(--hdb-text-muted); display: none;">
 					Last Updated: <span id="updated-time">-</span>
@@ -156,10 +167,17 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 						<button data-metric="avg_price">Avg Price</button>
 						<button data-metric="transaction_count">Volume</button>
 						<button id="download-png" class="btn btn-secondary" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem; font-size: 0.75rem;">
-							📷 PNG
+							<svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+							</svg>
+							PNG
 						</button>
 						<button id="share-link" class="btn btn-secondary" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem; font-size: 0.75rem;">
-							🔗 Share
+							<svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+							</svg>
+							Share
 						</button>
 					</div>
 				</div>
@@ -174,7 +192,10 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 					<div class="chart-header">
 						<h3 class="chart-title">Detailed Statistics</h3>
 						<button class="btn btn-secondary" id="export-csv">
-							📥 Export CSV
+							<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+							</svg>
+							Export CSV
 						</button>
 					</div>
 					<div style="overflow-x: auto;">

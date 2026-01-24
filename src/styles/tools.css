@@ -1,6 +1,6 @@
-/* HDB Tools Styles */
+/* HDB Tools Styles - Enhanced for Mobile-First Design */
 
-/* Color System */
+/* Modern Color System with CSS Custom Properties for compatibility */
 :root {
   --hdb-primary: #2563eb;
   --hdb-primary-dark: #1d4ed8;
@@ -9,20 +9,20 @@
   --hdb-success: #22c55e;
   --hdb-warning: #f59e0b;
   --hdb-danger: #ef4444;
-  
+
   --hdb-bg: #f8fafc;
   --hdb-bg-card: #ffffff;
   --hdb-bg-elevated: #f1f5f9;
   --hdb-border: #e2e8f0;
   --hdb-text: #1e293b;
   --hdb-text-muted: #64748b;
-  
+
   --hdb-gradient: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
   --hdb-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   --hdb-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
-/* Dark Mode */
+/* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
   :root {
     --hdb-bg: #0f172a;

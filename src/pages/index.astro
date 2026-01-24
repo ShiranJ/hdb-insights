@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 import '../styles/tools.css';
 ---
+---
 
 <!doctype html>
 <html lang="en">
@@ -13,97 +14,144 @@ import '../styles/tools.css';
 	</head>
 	<body>
 		<Header />
-		<main class="tool-container">
+		<main class="container py-8 space-y-16">
 			<!-- Hero Section -->
-			<section style="text-align: center; padding: 3rem 1rem; margin-bottom: 2rem;">
-				<h1 style="font-size: 3rem; font-weight: 800; margin-bottom: 1rem; background: var(--hdb-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-					🏠 HDB Insights
-				</h1>
-				<p style="font-size: 1.25rem; color: var(--hdb-text-muted); max-width: 600px; margin: 0 auto 2rem;">
-					Free Singapore HDB resale price analysis powered by real-time government data
-				</p>
-				<div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-					<a href="/compare" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem; text-decoration: none;">
-						🔍 Start Comparing
+			<section class="text-center py-12 space-y-8">
+				<div class="space-y-4">
+					<h1 class="text-4xl sm:text-5xl lg:text-6xl font-black bg-hdb-gradient bg-clip-text text-transparent">
+						🏠 HDB Insights
+					</h1>
+					<p class="text-lg sm:text-xl text-hdb-text-muted max-w-2xl mx-auto leading-relaxed">
+						Free Singapore HDB resale price analysis powered by real-time government data
+					</p>
+				</div>
+				<div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+					<a href="/compare" class="btn btn-primary text-lg px-8 py-4">
+						<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+						</svg>
+						Start Comparing
 					</a>
-					<a href="/calculator" class="btn btn-secondary" style="padding: 1rem 2rem; font-size: 1.1rem; text-decoration: none;">
-						📊 Find Best Value
+					<a href="/calculator" class="btn btn-secondary text-lg px-8 py-4">
+						<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+						</svg>
+						Find Best Value
 					</a>
 				</div>
 			</section>
 
 			<!-- Tools Grid -->
-			<section style="margin-bottom: 3rem;">
-				<h2 style="text-align: center; margin-bottom: 2rem; color: var(--hdb-text);">
+			<section class="space-y-8">
+				<h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-center text-hdb-text">
 					Powerful Analysis Tools
 				</h2>
-				<div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
-					<a href="/compare" class="comparison-card" style="text-decoration: none; color: inherit;">
-						<div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
-						<h3 style="margin-bottom: 0.5rem; color: var(--hdb-text);">Price Comparison</h3>
-						<p style="color: var(--hdb-text-muted); margin: 0;">
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					<a href="/compare" class="card group p-6 text-center hover:scale-105 transition-transform duration-200">
+						<svg class="w-16 h-16 mx-auto mb-4 text-hdb-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+						</svg>
+						<h3 class="text-xl font-semibold mb-3 text-hdb-text">Price Comparison</h3>
+						<p class="text-hdb-text-muted mb-4 leading-relaxed">
 							Compare HDB prices across different estates and flat types with interactive charts
 						</p>
-						<div style="margin-top: 1rem; color: var(--hdb-primary); font-weight: 600;">
-							Try it free →
+						<div class="inline-flex items-center text-hdb-primary font-semibold group-hover:text-hdb-primary-dark transition-colors">
+							Try it free
+							<svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+							</svg>
 						</div>
 					</a>
 
-					<a href="/calculator" class="comparison-card" style="text-decoration: none; color: inherit;">
-						<div style="font-size: 3rem; margin-bottom: 1rem;">💰</div>
-						<h3 style="margin-bottom: 0.5rem; color: var(--hdb-text);">Value Calculator</h3>
-						<p style="color: var(--hdb-text-muted); margin: 0;">
+					<a href="/calculator" class="card group p-6 text-center hover:scale-105 transition-transform duration-200">
+						<svg class="w-16 h-16 mx-auto mb-4 text-hdb-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+						</svg>
+						<h3 class="text-xl font-semibold mb-3 text-hdb-text">Value Calculator</h3>
+						<p class="text-hdb-text-muted mb-4 leading-relaxed">
 							Find the best value HDB units with our automated scoring algorithm
 						</p>
-						<div style="margin-top: 1rem; color: var(--hdb-primary); font-weight: 600;">
-							Calculate now →
+						<div class="inline-flex items-center text-hdb-primary font-semibold group-hover:text-hdb-primary-dark transition-colors">
+							Calculate now
+							<svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+							</svg>
 						</div>
 					</a>
 
-					<a href="/trends" class="comparison-card" style="text-decoration: none; color: inherit;">
-						<div style="font-size: 3rem; margin-bottom: 1rem;">📈</div>
-						<h3 style="margin-bottom: 0.5rem; color: var(--hdb-text);">Historical Trends</h3>
-						<p style="color: var(--hdb-text-muted); margin: 0;">
+					<a href="/trends" class="card group p-6 text-center hover:scale-105 transition-transform duration-200 md:col-span-2 lg:col-span-1">
+						<svg class="w-16 h-16 mx-auto mb-4 text-hdb-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+						</svg>
+						<h3 class="text-xl font-semibold mb-3 text-hdb-text">Historical Trends</h3>
+						<p class="text-hdb-text-muted mb-4 leading-relaxed">
 							Analyze price trends over time with moving averages and insights
 						</p>
-						<div style="margin-top: 1rem; color: var(--hdb-primary); font-weight: 600;">
-							View trends →
+						<div class="inline-flex items-center text-hdb-primary font-semibold group-hover:text-hdb-primary-dark transition-colors">
+							View trends
+							<svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+							</svg>
 						</div>
 					</a>
 				</div>
 			</section>
 
 			<!-- Features Section -->
-			<section style="margin-bottom: 3rem;">
-				<h2 style="text-align: center; margin-bottom: 2rem; color: var(--hdb-text);">
+			<section class="space-y-8">
+				<h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-center text-hdb-text">
 					Why HDB Insights?
 				</h2>
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
-					<div style="text-align: center;">
-						<div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔄</div>
-						<h4 style="margin-bottom: 0.5rem; color: var(--hdb-text);">Real-Time Data</h4>
-						<p style="color: var(--hdb-text-muted); font-size: 0.9rem; margin: 0;">
+				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+					<div class="text-center space-y-4">
+						<div class="flex justify-center">
+							<div class="w-12 h-12 bg-hdb-primary/10 rounded-full flex items-center justify-center">
+								<svg class="w-6 h-6 text-hdb-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+								</svg>
+							</div>
+						</div>
+						<h4 class="text-lg font-semibold text-hdb-text">Real-Time Data</h4>
+						<p class="text-sm text-hdb-text-muted leading-relaxed">
 							Data synced daily from official Singapore government APIs
 						</p>
 					</div>
-					<div style="text-align: center;">
-						<div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🆓</div>
-						<h4 style="margin-bottom: 0.5rem; color: var(--hdb-text);">100% Free</h4>
-						<p style="color: var(--hdb-text-muted); font-size: 0.9rem; margin: 0;">
+					<div class="text-center space-y-4">
+						<div class="flex justify-center">
+							<div class="w-12 h-12 bg-hdb-success/10 rounded-full flex items-center justify-center">
+								<svg class="w-6 h-6 text-hdb-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+								</svg>
+							</div>
+						</div>
+						<h4 class="text-lg font-semibold text-hdb-text">100% Free</h4>
+						<p class="text-sm text-hdb-text-muted leading-relaxed">
 							All tools free to use, no signup required
 						</p>
 					</div>
-					<div style="text-align: center;">
-						<div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📱</div>
-						<h4 style="margin-bottom: 0.5rem; color: var(--hdb-text);">Mobile Friendly</h4>
-						<p style="color: var(--hdb-text-muted); font-size: 0.9rem; margin: 0;">
-							Works perfectly on any device
+					<div class="text-center space-y-4">
+						<div class="flex justify-center">
+							<div class="w-12 h-12 bg-hdb-secondary/10 rounded-full flex items-center justify-center">
+								<svg class="w-6 h-6 text-hdb-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+								</svg>
+							</div>
+						</div>
+						<h4 class="text-lg font-semibold text-hdb-text">Mobile Friendly</h4>
+						<p class="text-sm text-hdb-text-muted leading-relaxed">
+							Works perfectly on any device with modern responsive design
 						</p>
 					</div>
-					<div style="text-align: center;">
-						<div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔒</div>
-						<h4 style="margin-bottom: 0.5rem; color: var(--hdb-text);">No Ads</h4>
-						<p style="color: var(--hdb-text-muted); font-size: 0.9rem; margin: 0;">
+					<div class="text-center space-y-4">
+						<div class="flex justify-center">
+							<div class="w-12 h-12 bg-hdb-accent/10 rounded-full flex items-center justify-center">
+								<svg class="w-6 h-6 text-hdb-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+								</svg>
+							</div>
+						</div>
+						<h4 class="text-lg font-semibold text-hdb-text">No Ads</h4>
+						<p class="text-sm text-hdb-text-muted leading-relaxed">
 							Clean, ad-free experience focused on data
 						</p>
 					</div>
@@ -111,13 +159,28 @@ import '../styles/tools.css';
 			</section>
 
 			<!-- Data Source Section -->
-			<section style="background: var(--hdb-bg-card); border: 1px solid var(--hdb-border); border-radius: 12px; padding: 2rem; text-align: center;">
-				<h3 style="margin-bottom: 1rem; color: var(--hdb-text);">📊 Data Source</h3>
-				<p style="color: var(--hdb-text-muted); margin-bottom: 1rem;">
+			<section class="card p-8 text-center space-y-4">
+				<div class="flex justify-center mb-4">
+					<div class="w-12 h-12 bg-hdb-primary/10 rounded-full flex items-center justify-center">
+						<svg class="w-6 h-6 text-hdb-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+						</svg>
+					</div>
+				</div>
+				<h3 class="text-xl font-semibold text-hdb-text">Data Source</h3>
+				<p class="text-hdb-text-muted leading-relaxed">
 					All HDB resale transaction data is sourced from the official Singapore Government Open Data portal.
 				</p>
-				<a href="https://data.gov.sg" target="_blank" rel="noopener noreferrer" style="color: var(--hdb-primary); font-weight: 600;">
-					Visit data.gov.sg →
+				<a
+					href="https://data.gov.sg"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="inline-flex items-center gap-2 text-hdb-primary font-semibold hover:text-hdb-primary-dark transition-colors"
+				>
+					Visit data.gov.sg
+					<svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+					</svg>
 				</a>
 			</section>
 		</main>
