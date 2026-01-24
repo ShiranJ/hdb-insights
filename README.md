@@ -1,64 +1,105 @@
-# Astro Starter Kit: Blog
+# HDB Insights: Core Tools Suite
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/astro-blog-starter-template)
+A modern, high-performance web suite built with Astro and Cloudflare to analyze Singapore's HDB resale market. This suite provides real-time data analysis, value scoring, and historical trend visualizations using free Singapore government APIs.
 
-![Astro Template Preview](https://github.com/withastro/astro/assets/2244813/ff10799f-a816-4703-b967-c78997e8323d)
+## 🚀 Key Features
 
-<!-- dash-content-start -->
+1.  **Interactive Price Comparison Tool**: Compare HDB resale prices across estates, flat types, and time periods with multi-dimensional filters. Includes QoQ trends, CSV/PNG export, and shareable links.
+2.  **Value Score Calculator**: An automated multi-factor scoring system for HDB units based on price, location (MRT proximity), lease, and amenities.
+3.  **Historical Trend Charts**: Interactive time-series visualizations with moving averages and price change indicators.
 
-Create a blog with Astro and deploy it on Cloudflare Workers as a [static website](https://developers.cloudflare.com/workers/static-assets/).
+## 🛠 Tech Stack
 
-Features:
+- **Framework**: Astro (Static & SSR)
+- **Deployment**: Cloudflare Pages / Workers
+- **Database**: Cloudflare D1 (SQLite)
+- **Cache**: Cloudflare KV
+- **APIs**:
+    - [Data.gov.sg](https://data.gov.sg/api/action/datastore_search?resource_id=d_8b84c4ee58e3cfc0ece0d773c8ca6abc) (HDB Resale Prices)
+    - [OneMap.gov.sg](https://www.onemap.gov.sg/docs/) (Geocoding, Transport, Amenities)
+- **Visuals**: Chart.js / Vanilla CSS
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and OpenGraph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
-- ✅ Built-in Observability logging
+## � Getting Started
 
-<!-- dash-content-end -->
+### Prerequisites
+- Node.js & npm
+- Cloudflare Account
+- OneMap Developer Account (Free)
 
-## Getting Started
-
-Outside of this repo, you can start a new project with this template using [C3](https://developers.cloudflare.com/pages/get-started/c3/) (the `create-cloudflare` CLI):
-
+### Installation
 ```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/astro-blog-starter-template
+git clone <repo-url>
+cd hdb-insights
+npm install
 ```
 
-A live public deployment of this template is available at [https://astro-blog-starter-template.templates.workers.dev](https://astro-blog-starter-template.templates.workers.dev)
+### Environment Setup
+Update `wrangler.json` (or use `wrangler secret put`) with your OneMap credentials:
+```json
+"vars": {
+  "ONEMAP_EMAIL": "your-email@example.com",
+  "ONEMAP_PASSWORD": "your-password"
+}
+```
 
-## 🚀 Project Structure
+## 🚢 Deployment
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+1.  **Create D1 Database**:
+    ```bash
+    npx wrangler d1 create hdb-data
+    ```
+    Update the `database_id` in `wrangler.json` with the assigned ID.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+2.  **Run Schema Migrations**:
+    ```bash
+    npx wrangler d1 execute hdb-data --local --file=./schema.sql
+    npx wrangler d1 execute hdb-data --remote --file=./schema.sql
+    ```
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
+3.  **Create KV Namespace**:
+    ```bash
+    npx wrangler kv:namespace create HDB_CACHE
+    ```
+    Update the `kv_namespaces` binding in `wrangler.json` with the assigned ID.
 
-Any static assets, like images, can be placed in the `public/` directory.
+4.  **Deploy**:
+    ```bash
+    npm run build && npx wrangler pages deploy ./dist
+    ```
 
-## 🧞 Commands
+## 🔄 Data Synchronization
 
-All commands are run from the root of the project, from a terminal:
+The application includes an automated data sync pipeline via `/api/cron`.
 
-| Command                           | Action                                           |
-| :-------------------------------- | :----------------------------------------------- |
-| `npm install`                     | Installs dependencies                            |
-| `npm run dev`                     | Starts local dev server at `localhost:4321`      |
-| `npm run build`                   | Build your production site to `./dist/`          |
-| `npm run preview`                 | Preview your build locally, before deploying     |
-| `npm run astro ...`               | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help`         | Get help using the Astro CLI                     |
-| `npm run build && npm run deploy` | Deploy your production site to Cloudflare        |
-| `npm wrangler tail`               | View real-time logs for all Workers              |
+### Automated Sync
+Daily synchronization is configured via Cloudflare Cron Triggers in `wrangler.json`:
+```json
+"triggers": {
+  "crons": ["0 18 * * *"]
+}
+```
+*Note: This runs daily at 2 AM SGT.*
 
-## 👀 Want to learn more?
+### Manual Sync Trigger
+You can manually trigger a data sync (fetches latest Data.gov.sg records and enriches with OneMap) by visiting:
+```text
+https://your-domain.com/api/cron?secret=manual-sync-trigger
+```
+### Sync Status
+Check the status of the latest sync and transaction count via:
+```text
+https://your-domain.com/api/sync-status
+```
 
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## 🧞 Local Development
+```bash
+npm run dev
+```
+To test with a local D1 database:
+```bash
+npx wrangler d1 execute hdb-data --local --file=./schema.sql
+npm run build && npx wrangler dev
+```
 
-## Credit
-
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+## 📝 License
+MIT

@@ -39,7 +39,9 @@ export async function getCoordinates(
     block: string,
     street: string
 ): Promise<Coordinates | null> {
-    const searchVal = `BLK ${block} ${street}`;
+    // OPTIMIZATION: OneMap Search API often fails if "BLK" is prefixed.
+    // Searching for just "{block} {street}" is more reliable for HDBs.
+    const searchVal = `${block} ${street}`;
     const url = `https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${encodeURIComponent(searchVal)}&returnGeom=Y&getAddrDetails=Y`;
 
     try {
@@ -59,6 +61,7 @@ export async function getCoordinates(
             };
         }
 
+        console.warn(`OneMap search returned 0 results for: "${searchVal}"`);
         return null;
     } catch (error) {
         console.error('OneMap search error:', error);
@@ -86,7 +89,7 @@ export async function getOneMapToken(
             return null;
         }
 
-        const data = await response.json();
+        const data = await response.json() as any;
         return data.access_token || null;
     } catch (error) {
         console.error('OneMap auth error:', error);
@@ -103,27 +106,39 @@ export async function getNearestMRT(
     longitude: number,
     token: string
 ): Promise<NearbyMRT | null> {
-    const url = `https://www.onemap.gov.sg/api/public/revgeocode?location=${latitude},${longitude}&token=${token}&buffer=1000&addressType=all`;
+    // OneMap Public API revgeocode: buffer is capped at 500m
+    const url = `https://www.onemap.gov.sg/api/public/revgeocode?location=${latitude},${longitude}&buffer=500&addressType=all`;
 
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: { 'Authorization': token }
+        });
 
         if (!response.ok) {
             console.error(`OneMap nearby transport failed: ${response.status}`);
             return null;
         }
 
-        const data = await response.json();
+        const data = await response.json() as any;
 
         // Extract MRT info from response if available
         if (data.GeocodeInfo && data.GeocodeInfo.length > 0) {
-            // Look for MRT in the building info
             for (const info of data.GeocodeInfo) {
-                if (info.BUILDING && info.BUILDING.includes('MRT')) {
-                    return {
-                        name: info.BUILDING,
-                        distance: Math.round(parseFloat(info.DISTANCE) || 0)
-                    };
+                // OneMap building names for MRT stations typically end with 'MRT STATION'
+                // Use BUILDINGNAME as discovered in recent API inspection
+                const name = (info.BUILDINGNAME || info.ROAD || '').toUpperCase();
+                if (name.includes('MRT') || name.includes('STATION')) {
+                    if (!name.includes('TRACK') && !name.includes('POWER')) {
+                        // Calculate distance manually as OneMap Public API doesn't return it in revgeocode
+                        const mrtLat = parseFloat(info.LATITUDE);
+                        const mrtLon = parseFloat(info.LONGITUDE);
+                        const distance = calculateDistance(latitude, longitude, mrtLat, mrtLon);
+
+                        return {
+                            name: info.BUILDINGNAME || info.ROAD,
+                            distance: distance
+                        };
+                    }
                 }
             }
         }
@@ -135,6 +150,9 @@ export async function getNearestMRT(
     }
 }
 
+// Supported themes: 'national_primary_schools', 'ssot_hawkercentres', 'nationalparks', 'shopping_malls' (if available), 'childcare'
+export type AmenityTheme = 'national_primary_schools' | 'ssot_hawkercentres' | 'nationalparks' | 'shopping_malls' | 'childcare' | 'hawkercentre' | 'national_parks' | 'preschools';
+
 /**
  * Get nearby amenities count within radius
  * Uses themes API
@@ -142,26 +160,50 @@ export async function getNearestMRT(
 export async function getNearbyAmenities(
     latitude: number,
     longitude: number,
-    theme: 'preschools' | 'hawkercentre' | 'parks' | 'communityclubs',
+    theme: AmenityTheme,
     token: string
 ): Promise<number> {
+    // Map legacy themes to current production themes
+    const themeMapping: Record<string, string> = {
+        'hawkercentre': 'ssot_hawkercentres',
+        'national_parks': 'nationalparks',
+        'preschools': 'childcare'
+        // 'shopping_malls': 'ssot_hawkercentres' // WRONG MAPPING removed. Malls theme might not exist publicly.
+    };
+
+    const actualTheme = themeMapping[theme] || theme;
+
     // Calculate bounding box (~500m radius)
     const latOffset = 0.0045;
     const lonOffset = 0.0045;
 
     const extents = `${longitude - lonOffset},${latitude - latOffset},${longitude + lonOffset},${latitude + latOffset}`;
-    const url = `https://www.onemap.gov.sg/api/public/themesvc/retrieveTheme?queryName=${theme}&token=${token}&extents=${extents}`;
+    const url = `https://www.onemap.gov.sg/api/public/themesvc/retrieveTheme?queryName=${actualTheme}&extents=${extents}`;
 
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: { 'Authorization': token }
+        });
 
         if (!response.ok) {
+            // Silently ignore 404 (Theme not found) as it acts as "0 results" for non-existent themes
+            if (response.status === 404) {
+                return 0;
+            }
+            console.warn(`OneMap theme ${actualTheme} failed with status ${response.status}`);
             return 0;
         }
 
-        const data = await response.json();
-        return data.SrchResults ? data.SrchResults.length - 1 : 0; // First item is metadata
-    } catch {
+        const data = await response.json() as any;
+
+        // OneMap Themes API structure: SrchResults index 0 is sometimes a metadata/offset object
+        // The real results follow. If it's 404/Empty, SrchResults might be missing or contain error.
+        if (data.SrchResults && Array.isArray(data.SrchResults) && data.SrchResults.length > 1) {
+            return data.SrchResults.length - 1; // Exclude metadata row
+        }
+        return 0;
+    } catch (error) {
+        console.error(`OneMap theme ${actualTheme} error:`, error);
         return 0;
     }
 }

@@ -104,15 +104,23 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 					</div>
 				</details>
 
-				<div class="filter-row" style="margin-top: 1rem; justify-content: flex-end;">
+				<div class="filter-row" style="margin-top: 1rem; justify-content: flex-end; align-items: center; gap: 1rem;">
+					<button class="btn btn-secondary" id="refresh-btn" title="Refresh data from server">
+						🔄 Refresh
+					</button>
 					<button class="btn btn-primary" id="compare-btn">
 						Compare Prices
 					</button>
 				</div>
 			</div>
 			
-			<div id="last-updated" style="text-align: right; font-size: 0.8rem; color: var(--hdb-text-muted); margin-bottom: 1rem; display: none;">
-				Last Updated: <span id="updated-time">-</span>
+			<div style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+				<div id="sync-badge" style="display: none; font-size: 0.8rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 99px; background: var(--hdb-primary); color: white;">
+					✨ <span id="new-count">0</span> new transactions synced
+				</div>
+				<div id="last-updated" style="font-size: 0.8rem; color: var(--hdb-text-muted); display: none;">
+					Last Updated: <span id="updated-time">-</span>
+				</div>
 			</div>
 
 			<!-- Loading State -->
@@ -147,6 +155,12 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 						<button data-metric="median_price" class="active">Median Price</button>
 						<button data-metric="avg_price">Avg Price</button>
 						<button data-metric="transaction_count">Volume</button>
+						<button id="download-png" class="btn btn-secondary" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem; font-size: 0.75rem;">
+							📷 PNG
+						</button>
+						<button id="share-link" class="btn btn-secondary" style="margin-left: 0.5rem; padding: 0.2rem 0.6rem; font-size: 0.75rem;">
+							🔗 Share
+						</button>
 					</div>
 				</div>
 				<div style="height: 400px; position: relative; width: 100%;">
@@ -263,7 +277,11 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 								<div class="stat-value">${latest.avg_lease ? latest.avg_lease + ' yrs' : '-'}</div>
 							</div>
 							<div class="stat-item">
-								<div class="stat-label">${data.range} Change</div>
+								<div class="stat-label">Avg Price/Sqm</div>
+								<div class="stat-value">${formatCurrency(latest.avg_price_psm || 0)}</div>
+							</div>
+							<div class="stat-item">
+								<div class="stat-label">QoQ Trend</div>
 								<div class="stat-value ${parseFloat(change) >= 0 ? 'positive' : 'negative'}">
 									${parseFloat(change) >= 0 ? '↑' : '↓'} ${Math.abs(change)}%
 								</div>
@@ -490,15 +508,89 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 				}
 			}
 
+			// Fetch sync status for freshness badge
+			async function checkSyncStatus() {
+				try {
+					const res = await fetch('/api/sync-status');
+					if (!res.ok) return;
+					const data = await res.json();
+					
+					if (data.last_sync_at) {
+						const date = new Date(data.last_sync_at);
+						const isRecent = (Date.now() - date.getTime()) < 24 * 60 * 60 * 1000;
+						
+						if (isRecent && data.records_processed > 0) {
+							document.getElementById('new-count').textContent = data.records_processed;
+							document.getElementById('sync-badge').style.display = 'block';
+						}
+						
+						document.getElementById('updated-time').textContent = date.toLocaleString();
+						document.getElementById('last-updated').style.display = 'block';
+					}
+				} catch (e) {
+					console.error('Failed to fetch sync status', e);
+				}
+			}
+
+			// Sync filters with URL
+			function syncURL() {
+				const params = new URLSearchParams();
+				const fields = ['town1', 'town2', 'town3', 'town4', 'flat-type', 'time-range', 'storey', 'min-area', 'max-area', 'min-lease'];
+				fields.forEach(f => {
+					const val = document.getElementById(f)?.value;
+					if (val) params.set(f, val);
+				});
+				window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+			}
+
+			// Load filters from URL
+			function loadFromURL() {
+				const params = new URLSearchParams(window.location.search);
+				let hasParams = false;
+				params.forEach((val, key) => {
+					const el = document.getElementById(key);
+					if (el) {
+						el.value = val;
+						hasParams = true;
+					}
+				});
+				if (hasParams) runComparison();
+			}
+
 			// Initialize
 			document.addEventListener('DOMContentLoaded', () => {
 				initDropdowns();
+				loadFromURL();
+				checkSyncStatus();
 				
-				document.getElementById('compare-btn').addEventListener('click', runComparison);
+				document.getElementById('compare-btn').addEventListener('click', () => {
+					runComparison();
+					syncURL();
+				});
+				
+				document.getElementById('refresh-btn').addEventListener('click', () => {
+					// Clear cache manually by bumping internal ver? 
+					// For now just re-run with current filters
+					runComparison();
+				});
+
 				document.getElementById('export-csv').addEventListener('click', exportCSV);
 				
+				document.getElementById('download-png').addEventListener('click', () => {
+					const canvas = document.getElementById('price-chart');
+					const link = document.createElement('a');
+					link.download = `hdb-price-trend-${new Date().toISOString().split('T')[0]}.png`;
+					link.href = canvas.toDataURL('image/png');
+					link.click();
+				});
+
+				document.getElementById('share-link').addEventListener('click', () => {
+					navigator.clipboard.writeText(window.location.href);
+					alert('Comparison link copied to clipboard!');
+				});
+
 				// Chart metric controls
-				document.querySelectorAll('.chart-controls button').forEach(btn => {
+				document.querySelectorAll('.chart-controls button[data-metric]').forEach(btn => {
 					btn.addEventListener('click', () => {
 						document.querySelectorAll('.chart-controls button').forEach(b => b.classList.remove('active'));
 						btn.classList.add('active');

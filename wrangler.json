@@ -30,5 +30,9 @@
 		"crons": [
 			"0 18 * * *"
 		]
+	},
+	"vars": {
+		"ONEMAP_EMAIL": "iamshiran.works@gmail.com",
+		"ONEMAP_PASSWORD": "D39KMBtmMS@THFk"
 	}
 }

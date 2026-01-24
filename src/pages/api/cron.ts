@@ -58,50 +58,94 @@ export const GET: APIRoute = async ({ request, locals }) => {
       WHERE sync_type = 'hdb_data'
     `).bind(new Date().toISOString()).run();
 
-        // Fetch data from data.gov.sg (last 6 months to catch new records)
+        // OPTIMIZATION: Get the latest month in our DB to avoid fetching old data
+        const lastMonthResult = await DB.prepare('SELECT MAX(month) as max_month FROM hdb_transactions').first();
+        const lastDbMonth = lastMonthResult?.max_month as string;
+
+        // Default to 6 months ago if DB is empty
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-        const filterDate = sixMonthsAgo.toISOString().substring(0, 7);
+        let filterDate = sixMonthsAgo.toISOString().substring(0, 7);
+
+        // If we have data, we only need to sync the latest month and forward
+        // (Because HDB releases data monthly/daily for current month)
+        if (lastDbMonth && lastDbMonth > filterDate) {
+            filterDate = lastDbMonth;
+        }
+
+        console.log(`Starting sync from month: ${filterDate}`);
 
         let allRecords: HDBRecord[] = [];
         let offset = 0;
         const limit = 1000;
+        let totalProcessed = 0;
+        const maxPages = 50; // Safety cap to prevent 190+ requests
 
-        while (true) {
-            const apiUrl = `${HDB_API_URL}?resource_id=${RESOURCE_ID}&limit=${limit}&offset=${offset}`;
+        while (offset < 200000) { // Safety limit
+            // OPTIMIZATION: Sort by month desc to get the newest records first. 
+            const apiUrl = `${HDB_API_URL}?resource_id=${RESOURCE_ID}&limit=${limit}&offset=${offset}&sort=month%20desc`;
 
             console.log(`Fetching from: ${apiUrl}`);
 
             const response = await fetch(apiUrl);
             if (!response.ok) {
+                if (response.status === 429) {
+                    console.error('Rate limited. Stopping for this run.');
+                    break;
+                }
                 throw new Error(`HDB API returned ${response.status}: ${response.statusText}`);
             }
 
-            const data = await response.json() as { success: boolean; result: { records: HDBRecord[] } };
+            const data = await response.json() as { success: boolean; result: { records: HDBRecord[], total: number } };
 
             if (data.success && data.result.records.length > 0) {
-                // Filter records >= 6 months ago
-                const filtered = data.result.records.filter(
+                const records = data.result.records;
+                const newestInBatch = records[0].month;
+                const oldestInBatch = records[records.length - 1].month;
+
+                console.log(`Batch Month Range: ${oldestInBatch} to ${newestInBatch}`);
+
+                // Filter records >= filterDate
+                const filtered = records.filter(
                     (r: HDBRecord) => r.month >= filterDate
                 );
 
-                allRecords.push(...filtered);
-                console.log(`Fetched ${data.result.records.length} records, ${filtered.length} after filtering. Total: ${allRecords.length}`);
-
-                if (data.result.records.length < limit) {
-                    break; // No more pages
+                if (filtered.length > 0) {
+                    allRecords.push(...filtered);
                 }
+
+                console.log(`Found ${filtered.length} relevant records in batch. Total relevant: ${allRecords.length}`);
+
+                // OPTIMIZATION: If even the NEWEST record in this batch is older than our filter, 
+                // and we are sorted DESC, then we've reached the end of the interesting data.
+                if (newestInBatch < filterDate) {
+                    console.log(`Stopping sync: Newest record in batch (${newestInBatch}) is older than start date (${filterDate})`);
+                    break;
+                }
+
+                if (records.length < limit) break;
 
                 offset += limit;
 
+                // If we've processed many records and found 0 relevant ones in the last few batches, stop.
+                if (allRecords.length === 0 && offset > 5000) {
+                    console.log('Stopping sync: No relevant records found in first 5000 records.');
+                    break;
+                }
+
+                if (offset / limit >= maxPages) {
+                    console.log('Safety cap reached (50 pages). Stopping sync.');
+                    break;
+                }
+
                 // Rate limiting
-                await new Promise(resolve => setTimeout(resolve, 600));
+                await new Promise(resolve => setTimeout(resolve, 1000));
             } else {
                 break;
             }
         }
 
-        console.log(`Total fetched: ${allRecords.length} records from HDB API`);
+        console.log(`Total fetched: ${allRecords.length} records from HDB API (since ${filterDate})`);
 
         // Batch insert records
         let insertedCount = 0;
@@ -142,9 +186,12 @@ export const GET: APIRoute = async ({ request, locals }) => {
                 });
 
                 const results = await DB.batch(statements);
-                insertedCount += results.filter(r => r.meta.changes > 0).length;
+                const batchInserted = results.filter(r => r.meta.changes > 0).length;
+                insertedCount += batchInserted;
 
-                console.log(`Batch ${Math.floor(i / batchSize) + 1}: inserted ${results.filter(r => r.meta.changes > 0).length} records`);
+                if (batchInserted > 0) {
+                    console.log(`Batch ${Math.floor(i / batchSize) + 1}: inserted ${batchInserted} records`);
+                }
             }
         }
 
@@ -152,7 +199,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
         await updateStatistics(DB);
 
         // Populate unit scores (scoring)
-        await populateUnitScores(DB);
+        await populateUnitScores(DB, runtime.env);
 
         const duration = Date.now() - startTime;
 
@@ -221,13 +268,35 @@ async function updateStatistics(DB: D1Database): Promise<void> {
   `).run();
 }
 
-/**
- * Populate unit scores based on recent transactions
- */
-async function populateUnitScores(DB: D1Database): Promise<void> {
-    console.log('Populating unit scores...');
+import {
+    getCoordinates,
+    getOneMapToken,
+    getNearestMRT,
+    getNearbyAmenities
+} from '../../lib/onemap';
 
-    // 1. Get latest town median prices (using most recent month)
+/**
+ * Populate unit scores based on recent transactions with real OneMap data
+ */
+async function populateUnitScores(DB: D1Database, env: any): Promise<void> {
+    console.log('Populating unit scores with OneMap data...');
+
+    const ONEMAP_EMAIL = env.ONEMAP_EMAIL;
+    const ONEMAP_PASSWORD = env.ONEMAP_PASSWORD;
+
+    if (!ONEMAP_EMAIL || !ONEMAP_PASSWORD) {
+        console.warn('OneMap credentials missing. Skipping enrichment.');
+        return;
+    }
+
+    // 1. Get OneMap Token
+    const token = await getOneMapToken(ONEMAP_EMAIL, ONEMAP_PASSWORD);
+    if (!token) {
+        console.error('Failed to get OneMap token. Skipping enrichment.');
+        return;
+    }
+
+    // 2. Get latest town median prices
     const statsResult = await DB.prepare(`
         SELECT town, flat_type, median_price 
         FROM price_statistics
@@ -239,7 +308,8 @@ async function populateUnitScores(DB: D1Database): Promise<void> {
         medianMap.set(`${row.town}:${row.flat_type}`, row.median_price);
     });
 
-    // 2. Get distinct blocks with their latest transaction details
+    // 3. Get distinct blocks that need scoring
+    // We fetch blocks from recent transactions that DON'T have a recent score
     const recentTxns = await DB.prepare(`
         SELECT t.* 
         FROM hdb_transactions t
@@ -250,51 +320,80 @@ async function populateUnitScores(DB: D1Database): Promise<void> {
         ) latest ON t.block = latest.block 
                AND t.street_name = latest.street_name 
                AND t.transaction_date = latest.max_date
-        LIMIT 500 -- Limit for performance in this demo
+        LEFT JOIN unit_scores s ON t.block = s.block AND t.street_name = s.street_name
+        WHERE s.total_score IS NULL OR s.calculated_at < date('now', '-30 days')
+        LIMIT 200 -- Increased from 50 since we parallelized requests
     `).all();
 
-    // 3. Calculate scores and batch insert
-    const statements = [];
+    console.log(`Enriching ${recentTxns.results.length} blocks...`);
 
+    // 4. Enrich and Calculate scores
     for (const txn of recentTxns.results as any[]) {
-        const townMedian = medianMap.get(`${txn.town}:${txn.flat_type}`) || 0;
-
-        // Mock data for missing geocoding
-        const unitData = {
-            resale_price: txn.resale_price,
-            town_median: townMedian,
-            mrt_distance: 500, // Default average
-            remaining_lease_years: txn.remaining_lease_years || 95,
-            price_history: [], // No history for simple calculation
-            amenities: {
-                schools: 1, // Default minimal
-                malls: 1,
-                parks: 1,
-                hawkers: 1
+        try {
+            // Check if we already have coordinates in transactions table (if we decide to cache them there)
+            // For now, we fetch from OneMap
+            const coords = await getCoordinates(txn.block, txn.street_name);
+            if (!coords) {
+                console.warn(`Could not geocode address: ${txn.block} ${txn.street_name}`);
+                continue;
             }
-        };
 
-        const score = calculateTotalScore(unitData);
+            // Get MRT and Amenities in parallel to speed up processing
+            const [mrt, schools, malls, parks, hawkers] = await Promise.all([
+                getNearestMRT(coords.latitude, coords.longitude, token),
+                getNearbyAmenities(coords.latitude, coords.longitude, 'preschools', token),
+                getNearbyAmenities(coords.latitude, coords.longitude, 'shopping_malls', token),
+                getNearbyAmenities(coords.latitude, coords.longitude, 'national_parks', token),
+                getNearbyAmenities(coords.latitude, coords.longitude, 'hawkercentre', token)
+            ]);
 
-        statements.push(DB.prepare(`
-            INSERT OR REPLACE INTO unit_scores (
-                block, street_name, town, flat_type,
-                total_score, price_score, location_score, lease_score, appreciation_score, amenities_score,
-                mrt_distance, nearby_schools, nearby_malls, nearby_parks
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-            txn.block, txn.street_name, txn.town, txn.flat_type,
-            score.total_score, score.price_score, score.location_score, score.lease_score, score.appreciation_score, score.amenities_score,
-            500, 1, 1, 1
-        ));
-    }
+            const townMedian = medianMap.get(`${txn.town}:${txn.flat_type}`) || 0;
 
-    if (statements.length > 0) {
-        // Chunk sizes for batching
-        const BATCH_SIZE = 10;
-        for (let i = 0; i < statements.length; i += BATCH_SIZE) {
-            await DB.batch(statements.slice(i, i + BATCH_SIZE));
+            const unitData = {
+                resale_price: txn.resale_price,
+                town_median: townMedian,
+                mrt_distance: mrt ? mrt.distance : 1500, // Default to far if none found
+                remaining_lease_years: txn.remaining_lease_years || 95,
+                price_history: [], // Still no history for now
+                amenities: {
+                    schools,
+                    malls,
+                    parks,
+                    hawkers
+                }
+            };
+
+            const score = calculateTotalScore(unitData);
+
+            await DB.prepare(`
+                INSERT OR REPLACE INTO unit_scores (
+                    block, street_name, town, flat_type,
+                    total_score, price_score, location_score, lease_score, appreciation_score, amenities_score,
+                    mrt_distance, nearest_mrt, nearby_schools, nearby_malls, nearby_parks,
+                    calculated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            `).bind(
+                txn.block, txn.street_name, txn.town, txn.flat_type,
+                score.total_score, score.price_score, score.location_score, score.lease_score, score.appreciation_score, score.amenities_score,
+                unitData.mrt_distance, mrt ? mrt.name : 'None nearby',
+                schools, malls, parks
+            ).run();
+
+            // Also update transactions table with lat/long if columns exist
+            await DB.prepare(`
+                UPDATE hdb_transactions 
+                SET latitude = ?, longitude = ?
+                WHERE block = ? AND street_name = ?
+            `).bind(coords.latitude, coords.longitude, txn.block, txn.street_name).run();
+
+            // Small delay to respect rate limits
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+        } catch (err) {
+            console.error(`Error enriching block ${txn.block} ${txn.street_name}:`, err);
         }
-        console.log(`Populated ${statements.length} unit scores`);
     }
+
+    console.log('Score population/enrichment complete.');
 }
+
