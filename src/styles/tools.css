@@ -1,37 +1,26 @@
-/* HDB Tools Styles */
+@import "./design_tokens.css";
 
-/* Color System */
+/* HDB Tools Styles - Modernized */
 :root {
-  --hdb-primary: #2563eb;
-  --hdb-primary-dark: #1d4ed8;
-  --hdb-secondary: #0891b2;
-  --hdb-accent: #8b5cf6;
-  --hdb-success: #22c55e;
-  --hdb-warning: #f59e0b;
-  --hdb-danger: #ef4444;
-  
-  --hdb-bg: #f8fafc;
-  --hdb-bg-card: #ffffff;
-  --hdb-bg-elevated: #f1f5f9;
-  --hdb-border: #e2e8f0;
-  --hdb-text: #1e293b;
-  --hdb-text-muted: #64748b;
-  
-  --hdb-gradient: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
-  --hdb-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --hdb-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --hdb-primary: var(--hdb-teal);
+  --hdb-primary-dark: var(--hdb-teal-dark);
+  --hdb-secondary: var(--hdb-terracotta);
+  --hdb-accent: var(--hdb-sand);
+
+  --hdb-bg-card: var(--hdb-glass-bg);
+  --hdb-border: var(--hdb-glass-border);
+  --hdb-shadow: var(--hdb-glass-shadow);
+
+  --hdb-gradient: linear-gradient(135deg, var(--hdb-teal) 0%, var(--hdb-terracotta) 100%);
 }
 
-/* Dark Mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --hdb-bg: #0f172a;
-    --hdb-bg-card: #1e293b;
-    --hdb-bg-elevated: #334155;
-    --hdb-border: #475569;
-    --hdb-text: #f1f5f9;
-    --hdb-text-muted: #94a3b8;
-  }
+.glass-panel {
+  background: var(--hdb-glass-bg);
+  backdrop-filter: var(--hdb-glass-blur);
+  -webkit-backdrop-filter: var(--hdb-glass-blur);
+  border: 1px solid var(--hdb-glass-border);
+  box-shadow: var(--hdb-glass-shadow);
+  border-radius: 16px;
 }
 
 /* Common Tool Layout */
@@ -217,8 +206,13 @@
   color: var(--hdb-text);
 }
 
-.stat-value.positive { color: var(--hdb-success); }
-.stat-value.negative { color: var(--hdb-danger); }
+.stat-value.positive {
+  color: var(--hdb-success);
+}
+
+.stat-value.negative {
+  color: var(--hdb-danger);
+}
 
 /* Chart Container */
 .chart-container {
@@ -327,8 +321,13 @@
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Empty State */
@@ -356,24 +355,24 @@
   .tool-container {
     padding: 1rem;
   }
-  
+
   .tool-header h1 {
     font-size: 1.75rem;
   }
-  
+
   .filter-row {
     flex-direction: column;
   }
-  
+
   .filter-group {
     width: 100%;
     min-width: unset;
   }
-  
+
   .cards-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .card-stats {
     grid-template-columns: 1fr;
   }

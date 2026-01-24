@@ -17,12 +17,18 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 		<Header />
 		<main class="tool-container">
 			<div class="tool-header">
-				<h1>📊 Value Score Calculator</h1>
+				<h1>
+					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 12px; color: var(--hdb-teal);">
+						<line x1="18" y1="20" x2="18" y2="10"></line>
+						<line x1="12" y1="20" x2="12" y2="4"></line>
+						<line x1="6" y1="20" x2="6" y2="14"></line>
+					</svg>Value Score Calculator
+				</h1>
 				<p>Find the best value HDB units based on multiple factors</p>
 			</div>
 
 			<!-- Filter Panel -->
-			<div class="filter-panel">
+			<div class="filter-panel glass-panel">
 				<div class="filter-row">
 					<div class="filter-group">
 						<label for="min-score">Minimum Score</label>
@@ -53,13 +59,16 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 					<div class="filter-group" style="flex: 0;">
 						<label>&nbsp;</label>
 						<button class="btn btn-primary" id="search-btn">
-							🔍 Find Best Values
+							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+								<circle cx="11" cy="11" r="8"></circle>
+								<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+							</svg>Find Best Values
 						</button>
 					</div>
 				</div>
 
 				<details style="margin-top: 1rem;">
-					<summary style="cursor: pointer; color: var(--hdb-text-muted);">
+					<summary style="cursor: pointer; color: var(--hdb-teal); font-weight: 600;">
 						Filter by Towns (click to expand)
 					</summary>
 					<div id="towns-filter" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;"></div>
@@ -67,22 +76,22 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 			</div>
 
 			<!-- Score Legend -->
-			<div style="display: flex; gap: 1.5rem; justify-content: center; margin-bottom: 2rem; flex-wrap: wrap;">
+			<div style="display: flex; gap: 1.5rem; justify-content: center; margin: 2rem 0; flex-wrap: wrap;">
 				<div style="display: flex; align-items: center; gap: 0.5rem;">
-					<div style="width: 20px; height: 20px; border-radius: 50%; background: #22c55e;"></div>
-					<span style="font-size: 0.875rem; color: var(--hdb-text-muted);">80+ Excellent</span>
+					<div style="width: 12px; height: 12px; border-radius: 50%; background: #22c55e;"></div>
+					<span style="font-size: 0.8125rem; font-weight: 600; color: var(--hdb-text-muted);">80+ Excellent</span>
 				</div>
 				<div style="display: flex; align-items: center; gap: 0.5rem;">
-					<div style="width: 20px; height: 20px; border-radius: 50%; background: #84cc16;"></div>
-					<span style="font-size: 0.875rem; color: var(--hdb-text-muted);">65-79 Good</span>
+					<div style="width: 12px; height: 12px; border-radius: 50%; background: #84cc16;"></div>
+					<span style="font-size: 0.8125rem; font-weight: 600; color: var(--hdb-text-muted);">65-79 Good</span>
 				</div>
 				<div style="display: flex; align-items: center; gap: 0.5rem;">
-					<div style="width: 20px; height: 20px; border-radius: 50%; background: #eab308;"></div>
-					<span style="font-size: 0.875rem; color: var(--hdb-text-muted);">50-64 Fair</span>
+					<div style="width: 12px; height: 12px; border-radius: 50%; background: #eab308;"></div>
+					<span style="font-size: 0.8125rem; font-weight: 600; color: var(--hdb-text-muted);">50-64 Fair</span>
 				</div>
 				<div style="display: flex; align-items: center; gap: 0.5rem;">
-					<div style="width: 20px; height: 20px; border-radius: 50%; background: #f97316;"></div>
-					<span style="font-size: 0.875rem; color: var(--hdb-text-muted);">35-49 Below Avg</span>
+					<div style="width: 12px; height: 12px; border-radius: 50%; background: #f97316;"></div>
+					<span style="font-size: 0.8125rem; font-weight: 600; color: var(--hdb-text-muted);">35-49 Below Avg</span>
 				</div>
 			</div>
 
@@ -90,7 +99,7 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 			<div id="loading-state" style="display: none;">
 				<div class="cards-grid">
 					{[1, 2, 3, 4].map(() => (
-						<div class="comparison-card">
+						<div class="comparison-card glass-panel">
 							<div class="loading-skeleton" style="height: 180px;"></div>
 						</div>
 					))}
@@ -108,23 +117,23 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 
 			<!-- Results -->
 			<div id="results-container" style="display: none;">
-				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-					<h3 style="margin: 0; color: var(--hdb-text);">
-						<span id="results-count">0</span> Results Found
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+					<h3 style="margin: 0; color: var(--hdb-text); font-size: 1.5rem;">
+						<span id="results-count">0</span> Units Found
 					</h3>
-					<div style="color: var(--hdb-text-muted); font-size: 0.875rem;">
-						Sorted by Total Score
+					<div style="color: var(--hdb-text-muted); font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+						Sorted by Value Score
 					</div>
 				</div>
 				<div id="results-grid" class="cards-grid"></div>
 			</div>
 
 			<!-- Score Breakdown Modal -->
-			<div id="score-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-				<div style="background: var(--hdb-bg-card); border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
-					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-						<h3 style="margin: 0;">Score Breakdown</h3>
-						<button id="close-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--hdb-text-muted);">&times;</button>
+			<div id="score-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 2000; align-items: center; justify-content: center;">
+				<div class="glass-panel" style="padding: 2.5rem; max-width: 550px; width: 90%; max-height: 90vh; overflow-y: auto; background: var(--hdb-glass-bg);">
+					<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+						<h3 style="margin: 0; font-size: 1.5rem;">Score Breakdown</h3>
+						<button id="close-modal" style="background: var(--hdb-bg-elevated); border: 1px solid var(--hdb-border); width: 32px; height: 32px; border-radius: 50%; font-size: 1.25rem; cursor: pointer; color: var(--hdb-text); display: flex; align-items: center; justify-content: center;">&times;</button>
 					</div>
 					<div id="modal-content"></div>
 				</div>
@@ -204,7 +213,7 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 				const town = item.town.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
 
 				return `
-					<div class="comparison-card" style="cursor: pointer;" onclick="showScoreBreakdown(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+					<div class="comparison-card glass-panel" style="cursor: pointer;" onclick="showScoreBreakdown(${JSON.stringify(item).replace(/"/g, '&quot;')})">
 						<div class="card-header">
 							<div>
 								<div class="card-title" style="font-size: 1rem;">${address}</div>
@@ -229,15 +238,18 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 							</div>
 						</div>
 						<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--hdb-border);">
-							<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-								<span style="padding: 0.25rem 0.5rem; background: var(--hdb-bg-elevated); border-radius: 4px; font-size: 0.75rem;">
-									💰 Price: ${item.price_score}
+							<div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+								<span style="display: flex; align-items: center; gap: 4px; padding: 0.25rem 0.6rem; background: var(--hdb-bg-elevated); border-radius: 6px; font-size: 0.75rem; font-weight: 600; color: var(--hdb-text-muted);">
+									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+									Price: ${item.price_score}
 								</span>
-								<span style="padding: 0.25rem 0.5rem; background: var(--hdb-bg-elevated); border-radius: 4px; font-size: 0.75rem;">
-									📍 Location: ${item.location_score}
+								<span style="display: flex; align-items: center; gap: 4px; padding: 0.25rem 0.6rem; background: var(--hdb-bg-elevated); border-radius: 6px; font-size: 0.75rem; font-weight: 600; color: var(--hdb-text-muted);">
+									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+									Location: ${item.location_score}
 								</span>
-								<span style="padding: 0.25rem 0.5rem; background: var(--hdb-bg-elevated); border-radius: 4px; font-size: 0.75rem;">
-									📅 Lease: ${item.lease_score}
+								<span style="display: flex; align-items: center; gap: 4px; padding: 0.25rem 0.6rem; background: var(--hdb-bg-elevated); border-radius: 6px; font-size: 0.75rem; font-weight: 600; color: var(--hdb-text-muted);">
+									<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+									Lease: ${item.lease_score}
 								</span>
 							</div>
 						</div>

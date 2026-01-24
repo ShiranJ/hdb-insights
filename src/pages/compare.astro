@@ -16,112 +16,114 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 	</head>
 	<body>
 		<Header />
-		<main class="tool-container">
-			<div class="tool-header">
-				<h1>🏠 HDB Price Comparison</h1>
-				<p>Compare resale prices across different estates and flat types</p>
-			</div>
-
-			<!-- Filter Panel -->
-			<div class="filter-panel">
-				<div class="filter-row" style="flex-wrap: wrap;">
-					<!-- Estate Selectors -->
-					<div class="filter-group">
-						<label for="town1">Estate 1</label>
+		<main class="tool-container dashboard-layout">
+			<div class="dashboard-sidebar glass-panel">
+				<div class="sidebar-header">
+					<h2>Filters <span id="selection-count" class="badge">1/4</span></h2>
+					<button class="btn btn-secondary" id="refresh-btn" title="Refresh data from server">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+							<path d="M21 3v5h-5"></path>
+							<path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+							<path d="M3 21v-5h5"></path>
+						</svg>
+					</button>
+				</div>
+				
+				<!-- Filter Group -->
+				<div class="filter-section">
+					<label>Estates to Compare</label>
+					<div class="estate-selectors">
 						<select id="town1"><option value="">Select Estate</option></select>
-					</div>
-					<div class="filter-group">
-						<label for="town2">Estate 2 (Optional)</label>
-						<select id="town2"><option value="">Select Estate</option></select>
-					</div>
-					<div class="filter-group">
-						<label for="town3">Estate 3 (Optional)</label>
-						<select id="town3"><option value="">Select Estate</option></select>
-					</div>
-					<div class="filter-group">
-						<label for="town4">Estate 4 (Optional)</label>
-						<select id="town4"><option value="">Select Estate</option></select>
-					</div>
-
-					<div class="filter-group">
-						<label for="flat-type">Flat Type</label>
-						<select id="flat-type">
-							<option value="4 ROOM">4 Room</option>
-							<option value="3 ROOM">3 Room</option>
-							<option value="5 ROOM">5 Room</option>
-							<option value="EXECUTIVE">Executive</option>
-							<option value="2 ROOM">2 Room</option>
-						</select>
-					</div>
-					<div class="filter-group">
-						<label for="time-range">Time Range</label>
-						<select id="time-range">
-							<option value="1Y">1 Year</option>
-							<option value="6M">6 Months</option>
-							<option value="3M">3 Months</option>
-							<option value="3Y">3 Years</option>
-							<option value="5Y">5 Years</option>
-						</select>
+						<select id="town2"><option value="">Select Estate 2 (Optional)</option></select>
+						<select id="town3"><option value="">Select Estate 3 (Optional)</option></select>
+						<select id="town4"><option value="">Select Estate 4 (Optional)</option></select>
 					</div>
 				</div>
 
-				<!-- Advanced Filters -->
-				<details class="advanced-filters" style="margin-top: 1rem; width: 100%;">
-					<summary style="cursor: pointer; color: var(--hdb-primary); font-weight: 500; margin-bottom: 0.5rem;">Advanced Filters (Storey, Area, Lease)</summary>
-					<div class="filter-row" style="padding-top: 0.5rem; border-top: 1px solid var(--hdb-border);">
-						<div class="filter-group">
-							<label for="storey">Storey Range</label>
+				<div class="filter-section">
+					<label for="flat-type">Flat Type</label>
+					<select id="flat-type">
+						<option value="4 ROOM">4 Room</option>
+						<option value="3 ROOM">3 Room</option>
+						<option value="5 ROOM">5 Room</option>
+						<option value="EXECUTIVE">Executive</option>
+						<option value="2 ROOM">2 Room</option>
+					</select>
+				</div>
+
+				<div class="filter-section">
+					<label for="time-range">Time Range</label>
+					<select id="time-range">
+						<option value="1Y">1 Year</option>
+						<option value="6M">6 Months</option>
+						<option value="3M">3 Months</option>
+						<option value="3Y">3 Years</option>
+						<option value="5Y">5 Years</option>
+					</select>
+				</div>
+
+				<!-- Advanced Filters in details -->
+				<details class="advanced-filters-compact">
+					<summary>Advanced Filters</summary>
+					<div class="advanced-grid">
+						<div class="filter-item">
+							<label for="storey">Storey</label>
 							<select id="storey">
 								<option value="">Any</option>
 								<option value="01 TO 03">01-03</option>
 								<option value="04 TO 06">04-06</option>
-								<option value="07 TO 09">07-09</option>
 								<option value="10 TO 12">10-12</option>
-								<option value="13 TO 15">13-15</option>
-								<option value="16 TO 18">16-18</option>
 								<option value="19 TO 21">19-21</option>
-								<option value="22 TO 24">22-24</option>
-								<option value="25 TO 27">25-27</option>
 								<option value="28 TO 30">28-30</option>
-								<option value="31 TO 33">31-33</option>
-								<option value="34 TO 36">34-36</option>
-								<option value="37 TO 39">37-39</option>
-								<option value="40 TO 42">40-42</option>
 							</select>
 						</div>
-						<div class="filter-group">
-							<label>Floor Area (sqm)</label>
-							<div style="display: flex; gap: 0.5rem; align-items: center;">
-								<input type="number" id="min-area" placeholder="Min" style="width: 70px;">
-								<span>-</span>
-								<input type="number" id="max-area" placeholder="Max" style="width: 70px;">
-							</div>
+						<div class="filter-item">
+							<label>Min Lease</label>
+							<input type="number" id="min-lease" placeholder="Years">
 						</div>
-						<div class="filter-group">
-							<label>Min Lease (Years)</label>
-							<input type="number" id="min-lease" placeholder="Min" style="width: 80px;">
+						<div class="filter-item">
+							<label>Area (Min)</label>
+							<input type="number" id="min-area" placeholder="Sqm">
+						</div>
+						<div class="filter-item">
+							<label>Area (Max)</label>
+							<input type="number" id="max-area" placeholder="Sqm">
 						</div>
 					</div>
 				</details>
 
-				<div class="filter-row" style="margin-top: 1rem; justify-content: flex-end; align-items: center; gap: 1rem;">
-					<button class="btn btn-secondary" id="refresh-btn" title="Refresh data from server">
-						🔄 Refresh
-					</button>
-					<button class="btn btn-primary" id="compare-btn">
-						Compare Prices
-					</button>
-				</div>
+				<button class="btn btn-primary w-full mt-4" id="compare-btn">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+						<line x1="18" y1="20" x2="18" y2="10"></line>
+						<line x1="12" y1="20" x2="12" y2="4"></line>
+						<line x1="6" y1="20" x2="6" y2="14"></line>
+					</svg>Compare Prices
+				</button>
 			</div>
-			
-			<div style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-				<div id="sync-badge" style="display: none; font-size: 0.8rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 99px; background: var(--hdb-primary); color: white;">
-					✨ <span id="new-count">0</span> new transactions synced
+
+			<div class="dashboard-main">
+				<div class="tool-header">
+					<h1>
+						<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 12px; color: var(--hdb-teal);">
+							<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+							<polyline points="9 22 9 12 15 12 15 22"></polyline>
+						</svg>HDB Price Comparison
+					</h1>
+					<p>Compare resale prices across different estates and flat types</p>
 				</div>
-				<div id="last-updated" style="font-size: 0.8rem; color: var(--hdb-text-muted); display: none;">
-					Last Updated: <span id="updated-time">-</span>
+
+				<div class="sync-status-bar">
+					<div id="sync-badge" class="badge badge-success" style="display: none;">
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+							<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+						</svg><span id="new-count">0</span> new transactions
+					</div>
+					<div id="last-updated" class="status-pill" style="display: none;">
+						<span class="status-dot"></span>
+						Last Updated: <span id="updated-time">-</span>
+					</div>
 				</div>
-			</div>
 
 			<!-- Loading State -->
 			<div id="loading-state" style="display: none;">
@@ -173,8 +175,12 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 				<div class="chart-container">
 					<div class="chart-header">
 						<h3 class="chart-title">Detailed Statistics</h3>
-						<button class="btn btn-secondary" id="export-csv">
-							📥 Export CSV
+						<button class="btn btn-secondary" id="export-csv" style="display: flex; align-items: center; gap: 8px; padding: 0.5rem 1rem;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+								<polyline points="7 10 12 15 17 10"></polyline>
+								<line x1="12" y1="15" x2="12" y2="3"></line>
+							</svg>Export CSV
 						</button>
 					</div>
 					<div style="overflow-x: auto;">
@@ -185,7 +191,241 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 					</div>
 				</div>
 			</div>
+				</div>
+			</div>
 		</main>
+
+		<style is:global>
+			.dashboard-layout {
+				display: grid;
+				grid-template-columns: 320px 1fr;
+				gap: 2rem;
+				max-width: 1600px;
+				margin: 0 auto;
+				padding: 2rem;
+			}
+			.dashboard-sidebar {
+				display: flex;
+				flex-direction: column;
+				gap: 1.5rem;
+				padding: 2rem;
+				height: fit-content;
+				position: sticky;
+				top: 6.5rem;
+				transition: var(--hdb-transition-fast);
+			}
+			.sidebar-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 0.5rem;
+			}
+			.sidebar-header h2 {
+				display: flex;
+				align-items: center;
+				gap: 0.75rem;
+				font-size: 1.25rem;
+			}
+			#selection-count {
+				background: var(--hdb-teal);
+				color: white;
+				font-size: 0.75rem;
+				padding: 0.2rem 0.6rem;
+				border-radius: 99px;
+			}
+			.sync-status-bar {
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				margin-bottom: 2rem;
+			}
+			.status-pill {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.5rem;
+				padding: 0.4rem 0.8rem;
+				background: var(--hdb-teal);
+				background: rgba(0, 109, 119, 0.1);
+				color: var(--hdb-teal);
+				border-radius: 99px;
+				font-size: 0.75rem;
+				font-weight: 700;
+				border: 1px solid rgba(0, 109, 119, 0.2);
+			}
+			.status-dot {
+				width: 6px;
+				height: 6px;
+				background: var(--hdb-teal);
+				border-radius: 50%;
+				animation: pulse 2s infinite;
+			}
+			@keyframes pulse {
+				0% { opacity: 1; }
+				50% { opacity: 0.4; }
+				100% { opacity: 1; }
+			}
+			.estate-selectors {
+				display: flex;
+				flex-direction: column;
+				gap: 0.75rem;
+			}
+			select, input {
+				appearance: none;
+				padding: 0.875rem 1.25rem;
+				background: var(--hdb-bg-elevated);
+				border: 1.5px solid var(--hdb-border);
+				border-radius: 14px;
+				color: var(--hdb-text);
+				font-size: 0.9375rem;
+				width: 100%;
+				transition: all var(--hdb-transition-fast);
+				cursor: pointer;
+				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23006D77' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+				background-repeat: no-repeat;
+				background-position: right 1rem center;
+				background-size: 1.2rem;
+				padding-right: 2.5rem;
+			}
+			input { background-image: none; padding-right: 1.25rem; }
+			select option {
+				background-color: var(--hdb-bg-elevated);
+				color: var(--hdb-text);
+				padding: 1rem;
+			}
+			select:hover, input:hover {
+				border-color: var(--hdb-teal);
+				background-color: var(--hdb-glass-bg);
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+			}
+			select:focus, input:focus {
+				outline: none;
+				border-color: var(--hdb-teal);
+				box-shadow: 0 0 0 4px rgba(0, 109, 119, 0.15);
+				transform: translateY(-2px);
+			}
+			.advanced-filters-compact {
+				margin: 1rem 0;
+				border-top: 1px solid var(--hdb-border);
+				padding-top: 0.5rem;
+			}
+			.advanced-filters-compact summary {
+				font-size: 0.875rem;
+				font-weight: 700;
+				color: var(--hdb-teal);
+				cursor: pointer;
+				padding: 0.5rem 0;
+				user-select: none;
+				transition: var(--hdb-transition-fast);
+				list-style: none;
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+			.advanced-filters-compact summary::-webkit-details-marker { display: none; }
+			.advanced-filters-compact summary::before {
+				content: '';
+				display: inline-block;
+				width: 0;
+				height: 0;
+				border-left: 5px solid transparent;
+				border-right: 5px solid transparent;
+				border-top: 6px solid var(--hdb-teal);
+				transition: transform 0.2s;
+			}
+			.advanced-filters-compact[open] summary::before {
+				transform: rotate(-180deg);
+			}
+			.advanced-grid {
+				display: grid;
+				grid-template-columns: 1fr;
+				gap: 1.25rem;
+				padding: 1.25rem 0;
+			}
+			.filter-item {
+				display: flex;
+				flex-direction: column;
+				gap: 0.5rem;
+			}
+			.filter-item label {
+				font-size: 0.75rem;
+				font-weight: 700;
+				color: var(--hdb-text-muted);
+				text-transform: uppercase;
+			}
+			.stat-grid-dashboard {
+				display: grid;
+				grid-template-columns: repeat(2, 1fr);
+				gap: 1rem;
+				margin-top: 1.25rem;
+				padding-top: 1.25rem;
+				border-top: 1px solid var(--hdb-border);
+			}
+			.stat-item-compact {
+				display: flex;
+				flex-direction: column;
+				gap: 0.25rem;
+			}
+			.stat-item-compact .stat-label {
+				font-size: 0.75rem;
+				font-weight: 600;
+				color: var(--hdb-text-muted);
+				text-transform: uppercase;
+				letter-spacing: 0.025em;
+			}
+			.stat-item-compact .stat-value-sm {
+				font-size: 0.9375rem;
+				font-weight: 700;
+				color: var(--hdb-text);
+			}
+			.card-footer-info {
+				margin-top: 1rem;
+				font-size: 0.8125rem;
+				color: var(--hdb-text-muted);
+				text-align: right;
+			}
+			.card-footer-info strong {
+				color: var(--hdb-teal);
+			}
+			.trend-icon {
+				font-size: 1.1em;
+				font-weight: 900;
+				margin-right: 2px;
+			}
+			@media (max-width: 1024px) {
+				.dashboard-layout {
+					grid-template-columns: 1fr;
+					padding: 1rem;
+					gap: 1.5rem;
+				}
+				.dashboard-sidebar {
+					position: static;
+					padding: 1.5rem;
+				}
+				.dashboard-sidebar h2 { font-size: 1.125rem; }
+				.tool-header h1 { font-size: 1.5rem !important; }
+				.tool-header p { font-size: 0.875rem; }
+				.stat-grid-dashboard {
+					gap: 0.75rem;
+					margin-top: 1rem;
+					padding-top: 1rem;
+				}
+				.stat-value-sm { font-size: 0.8125rem !important; }
+			}
+			@media (max-width: 640px) {
+				.chart-header {
+					flex-direction: column;
+					align-items: flex-start;
+					gap: 1rem;
+				}
+				.chart-controls {
+					width: 100%;
+					overflow-x: auto;
+					padding-bottom: 0.5rem;
+				}
+				.estate-selectors { gap: 0.5rem; }
+				select, input { padding: 0.75rem 1rem; font-size: 0.875rem; }
+			}
+		</style>
 		<Footer />
 
 		<script is:inline>
@@ -221,6 +461,13 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 				});
 			}
 
+			// Update selection counter
+			function updateSelectionCount() {
+				const selectors = ['town1', 'town2', 'town3', 'town4'];
+				const count = selectors.filter(id => document.getElementById(id).value).length;
+				document.getElementById('selection-count').textContent = `${count}/4`;
+			}
+
 			// Fetch comparison data
 			async function fetchComparison(town, flatType, range, filters = {}) {
 				const params = new URLSearchParams({ 
@@ -250,41 +497,43 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 					: 0;
 
 				return `
-					<div class="comparison-card">
+					<div class="comparison-card glass-panel">
 						<div class="card-header">
 							<span class="card-title">${town.split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')}</span>
 							<span class="card-badge">${data.flat_type}</span>
 						</div>
 						<div class="card-stats">
-							<div class="stat-item">
+							<div class="stat-group main-stat">
 								<div class="stat-label">Median Price</div>
-								<div class="stat-value">${formatCurrency(latest.median_price || 0)}</div>
+								<div class="stat-value highlight">${formatCurrency(latest.median_price || 0)}</div>
 							</div>
-							<div class="stat-item">
-								<div class="stat-label">Transactions</div>
-								<div class="stat-value">${latest.transaction_count || 0}</div>
-							</div>
-							<div class="stat-item">
-								<div class="stat-label">Min Price</div>
-								<div class="stat-value">${formatCurrency(latest.min_price || 0)}</div>
-							</div>
-							<div class="stat-item">
-								<div class="stat-label">Max Price</div>
-								<div class="stat-value">${formatCurrency(latest.max_price || 0)}</div>
-							</div>
-							<div class="stat-item">
-								<div class="stat-label">Avg Lease</div>
-								<div class="stat-value">${latest.avg_lease ? latest.avg_lease + ' yrs' : '-'}</div>
-							</div>
-							<div class="stat-item">
-								<div class="stat-label">Avg Price/Sqm</div>
-								<div class="stat-value">${formatCurrency(latest.avg_price_psm || 0)}</div>
-							</div>
-							<div class="stat-item">
+							<div class="stat-group">
 								<div class="stat-label">QoQ Trend</div>
 								<div class="stat-value ${parseFloat(change) >= 0 ? 'positive' : 'negative'}">
-									${parseFloat(change) >= 0 ? '↑' : '↓'} ${Math.abs(change)}%
+									<span class="trend-icon">${parseFloat(change) >= 0 ? '↗' : '↘'}</span>
+									${Math.abs(change)}%
 								</div>
+							</div>
+							<div class="stat-grid-dashboard">
+								<div class="stat-item-compact">
+									<div class="stat-label">Volume</div>
+									<div class="stat-value-sm">${latest.transaction_count || 0}</div>
+								</div>
+								<div class="stat-item-compact">
+									<div class="stat-label">Avg $/Sqm</div>
+									<div class="stat-value-sm">${formatCurrency(latest.avg_price_psm || 0)}</div>
+								</div>
+								<div class="stat-item-compact">
+									<div class="stat-label">Min Price</div>
+									<div class="stat-value-sm">${formatCurrency(latest.min_price || 0)}</div>
+								</div>
+								<div class="stat-item-compact">
+									<div class="stat-label">Max Price</div>
+									<div class="stat-value-sm">${formatCurrency(latest.max_price || 0)}</div>
+								</div>
+							</div>
+							<div class="card-footer-info">
+								<span>Avg Lease: <strong>${latest.avg_lease || '-'} yrs</strong></span>
 							</div>
 						</div>
 					</div>
@@ -327,15 +576,30 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 					options: {
 						responsive: true,
 						maintainAspectRatio: false,
+						interaction: {
+							mode: 'index',
+							intersect: false,
+						},
 						plugins: {
-							legend: { position: 'top' },
+							legend: { 
+								position: 'top',
+								labels: {
+									usePointStyle: true,
+									padding: 20,
+									font: { size: 12, weight: 600 }
+								}
+							},
 							tooltip: {
+								backgroundColor: 'rgba(0, 0, 0, 0.8)',
+								padding: 12,
+								titleFont: { size: 14, weight: 700 },
+								bodyFont: { size: 13 },
 								callbacks: {
 									label: function(context) {
 										const label = context.dataset.label || '';
 										const value = context.raw;
 										if (currentMetric === 'transaction_count') {
-											return `${label}: ${value} transactions`;
+											return `${label}: ${value} units`;
 										}
 										return `${label}: ${formatCurrency(value)}`;
 									}
@@ -343,7 +607,12 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 							}
 						},
 						scales: {
+							x: {
+								grid: { display: false }
+							},
 							y: {
+								beginAtZero: false,
+								grid: { color: 'rgba(0, 0, 0, 0.05)' },
 								ticks: {
 									callback: function(value) {
 										if (currentMetric === 'transaction_count') return value;
@@ -562,6 +831,12 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 				initDropdowns();
 				loadFromURL();
 				checkSyncStatus();
+				updateSelectionCount();
+
+				// Listen for selection changes
+				['town1', 'town2', 'town3', 'town4'].forEach(id => {
+					document.getElementById(id).addEventListener('change', updateSelectionCount);
+				});
 				
 				document.getElementById('compare-btn').addEventListener('click', () => {
 					runComparison();
