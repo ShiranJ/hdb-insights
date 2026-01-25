@@ -49,6 +49,7 @@ export async function getCoordinates(
 
         if (!response.ok) {
             console.error(`OneMap search failed: ${response.status}`);
+            await response.body?.cancel();
             return null;
         }
 
@@ -86,6 +87,7 @@ export async function getOneMapToken(
 
         if (!response.ok) {
             console.error(`OneMap auth failed: ${response.status}`);
+            await response.body?.cancel();
             return null;
         }
 
@@ -116,6 +118,7 @@ export async function getNearestMRT(
 
         if (!response.ok) {
             console.error(`OneMap nearby transport failed: ${response.status}`);
+            await response.body?.cancel();
             return null;
         }
 
@@ -188,9 +191,11 @@ export async function getNearbyAmenities(
         if (!response.ok) {
             // Silently ignore 404 (Theme not found) as it acts as "0 results" for non-existent themes
             if (response.status === 404) {
+                await response.body?.cancel();
                 return 0;
             }
             console.warn(`OneMap theme ${actualTheme} failed with status ${response.status}`);
+            await response.body?.cancel();
             return 0;
         }
 

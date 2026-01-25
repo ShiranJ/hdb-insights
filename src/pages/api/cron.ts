@@ -198,8 +198,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
         // Update pre-aggregated statistics
         await updateStatistics(DB);
 
-        // Populate unit scores (scoring)
-        await populateUnitScores(DB, runtime.env);
+        // Enrichment (populateUnitScores) is now decoupled to a separate cron job (/api/enrich)
+        // to avoid subrequest limit issues.
 
         const duration = Date.now() - startTime;
 
@@ -266,134 +266,5 @@ async function updateStatistics(DB: D1Database): Promise<void> {
     WHERE month >= date('now', '-6 months')
     GROUP BY town, flat_type, month
   `).run();
-}
-
-import {
-    getCoordinates,
-    getOneMapToken,
-    getNearestMRT,
-    getNearbyAmenities
-} from '../../lib/onemap';
-
-/**
- * Populate unit scores based on recent transactions with real OneMap data
- */
-async function populateUnitScores(DB: D1Database, env: any): Promise<void> {
-    console.log('Populating unit scores with OneMap data...');
-
-    const ONEMAP_EMAIL = env.ONEMAP_EMAIL;
-    const ONEMAP_PASSWORD = env.ONEMAP_PASSWORD;
-
-    if (!ONEMAP_EMAIL || !ONEMAP_PASSWORD) {
-        console.warn('OneMap credentials missing. Skipping enrichment.');
-        return;
-    }
-
-    // 1. Get OneMap Token
-    const token = await getOneMapToken(ONEMAP_EMAIL, ONEMAP_PASSWORD);
-    if (!token) {
-        console.error('Failed to get OneMap token. Skipping enrichment.');
-        return;
-    }
-
-    // 2. Get latest town median prices
-    const statsResult = await DB.prepare(`
-        SELECT town, flat_type, median_price 
-        FROM price_statistics
-        WHERE month = (SELECT MAX(month) FROM price_statistics)
-    `).all();
-
-    const medianMap = new Map<string, number>();
-    statsResult.results.forEach((row: any) => {
-        medianMap.set(`${row.town}:${row.flat_type}`, row.median_price);
-    });
-
-    // 3. Get distinct blocks that need scoring
-    // We fetch blocks from recent transactions that DON'T have a recent score
-    const recentTxns = await DB.prepare(`
-        SELECT t.* 
-        FROM hdb_transactions t
-        INNER JOIN (
-            SELECT block, street_name, MAX(transaction_date) as max_date
-            FROM hdb_transactions
-            GROUP BY block, street_name
-        ) latest ON t.block = latest.block 
-               AND t.street_name = latest.street_name 
-               AND t.transaction_date = latest.max_date
-        LEFT JOIN unit_scores s ON t.block = s.block AND t.street_name = s.street_name
-        WHERE s.total_score IS NULL OR s.calculated_at < date('now', '-30 days')
-        LIMIT 200 -- Increased from 50 since we parallelized requests
-    `).all();
-
-    console.log(`Enriching ${recentTxns.results.length} blocks...`);
-
-    // 4. Enrich and Calculate scores
-    for (const txn of recentTxns.results as any[]) {
-        try {
-            // Check if we already have coordinates in transactions table (if we decide to cache them there)
-            // For now, we fetch from OneMap
-            const coords = await getCoordinates(txn.block, txn.street_name);
-            if (!coords) {
-                console.warn(`Could not geocode address: ${txn.block} ${txn.street_name}`);
-                continue;
-            }
-
-            // Get MRT and Amenities in parallel to speed up processing
-            const [mrt, schools, malls, parks, hawkers] = await Promise.all([
-                getNearestMRT(coords.latitude, coords.longitude, token),
-                getNearbyAmenities(coords.latitude, coords.longitude, 'preschools', token),
-                getNearbyAmenities(coords.latitude, coords.longitude, 'shopping_malls', token),
-                getNearbyAmenities(coords.latitude, coords.longitude, 'national_parks', token),
-                getNearbyAmenities(coords.latitude, coords.longitude, 'hawkercentre', token)
-            ]);
-
-            const townMedian = medianMap.get(`${txn.town}:${txn.flat_type}`) || 0;
-
-            const unitData = {
-                resale_price: txn.resale_price,
-                town_median: townMedian,
-                mrt_distance: mrt ? mrt.distance : 1500, // Default to far if none found
-                remaining_lease_years: txn.remaining_lease_years || 95,
-                price_history: [], // Still no history for now
-                amenities: {
-                    schools,
-                    malls,
-                    parks,
-                    hawkers
-                }
-            };
-
-            const score = calculateTotalScore(unitData);
-
-            await DB.prepare(`
-                INSERT OR REPLACE INTO unit_scores (
-                    block, street_name, town, flat_type,
-                    total_score, price_score, location_score, lease_score, appreciation_score, amenities_score,
-                    mrt_distance, nearest_mrt, nearby_schools, nearby_malls, nearby_parks,
-                    calculated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            `).bind(
-                txn.block, txn.street_name, txn.town, txn.flat_type,
-                score.total_score, score.price_score, score.location_score, score.lease_score, score.appreciation_score, score.amenities_score,
-                unitData.mrt_distance, mrt ? mrt.name : 'None nearby',
-                schools, malls, parks
-            ).run();
-
-            // Also update transactions table with lat/long if columns exist
-            await DB.prepare(`
-                UPDATE hdb_transactions 
-                SET latitude = ?, longitude = ?
-                WHERE block = ? AND street_name = ?
-            `).bind(coords.latitude, coords.longitude, txn.block, txn.street_name).run();
-
-            // Small delay to respect rate limits
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-        } catch (err) {
-            console.error(`Error enriching block ${txn.block} ${txn.street_name}:`, err);
-        }
-    }
-
-    console.log('Score population/enrichment complete.');
 }
 

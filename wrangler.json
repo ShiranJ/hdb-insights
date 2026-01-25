@@ -4,7 +4,7 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
-	"main": "./dist/_worker.js/index.js",
+	"main": "./src/entry.ts",
 	"assets": {
 		"directory": "./dist",
 		"binding": "ASSETS"
@@ -28,7 +28,8 @@
 	],
 	"triggers": {
 		"crons": [
-			"0 18 * * *"
+			"0 18 * * *",
+			"*/30 * * * *"
 		]
 	},
 	"vars": {
