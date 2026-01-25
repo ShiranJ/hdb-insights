@@ -17,13 +17,13 @@
 		{
 			"binding": "DB",
 			"database_name": "hdb-data",
-			"database_id": "29ec2080-870e-4988-b0da-b1a6813c5cdc"
+			"database_id": "e8c3c554-e818-4122-a3e0-fcccf63b55df"
 		}
 	],
 	"kv_namespaces": [
 		{
 			"binding": "CACHE",
-			"id": "c72f389e120c48f09cfa3127d8742f74"
+			"id": "82233a0175864eb3aa2de8bbbc4530b2"
 		}
 	],
 	"triggers": {
