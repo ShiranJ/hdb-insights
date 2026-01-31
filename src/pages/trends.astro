@@ -103,6 +103,12 @@ const description = 'Analyze HDB resale price trends over time with interactive 
 									<line x1="12" y1="15" x2="12" y2="3"></line>
 								</svg>Export
 							</button>
+							<button class="btn btn-secondary" id="share-link" style="padding: 0.5rem 1rem;">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+									<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+									<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+								</svg>Share
+							</button>
 						</div>
 					</div>
 					<div style="height: 400px;">
@@ -135,6 +141,8 @@ const description = 'Analyze HDB resale price trends over time with interactive 
 		</main>
 		<Footer />
 
+		<div class="toast-container" id="toast-container"></div>
+
 		<script is:inline>
 			const HDB_TOWNS = [
 				'ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH',
@@ -149,6 +157,29 @@ const description = 'Analyze HDB resale price trends over time with interactive 
 			let volumeChart = null;
 			let currentRange = '1Y';
 			let currentData = null;
+
+			function showToast(message, type = 'success') {
+				const container = document.getElementById('toast-container');
+				const toast = document.createElement('div');
+				toast.className = `toast toast-${type}`;
+				toast.innerHTML = `
+					<svg class="toast-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+						<polyline points="22 4 12 14.01 9 11.01"></polyline>
+					</svg>
+					<span>${message}</span>
+				`;
+				container.appendChild(toast);
+				
+				// Force reflow
+				toast.offsetHeight;
+				toast.classList.add('show');
+				
+				setTimeout(() => {
+					toast.classList.remove('show');
+					setTimeout(() => toast.remove(), 400);
+				}, 3000);
+			}
 
 			// Initialize
 			function init() {
@@ -171,9 +202,55 @@ const description = 'Analyze HDB resale price trends over time with interactive 
 					});
 				});
 
-				document.getElementById('analyze-btn').addEventListener('click', analyze);
+				document.getElementById('analyze-btn').addEventListener('click', () => {
+					analyze();
+					syncURL();
+				});
 				document.getElementById('show-ma').addEventListener('change', updateCharts);
-				document.getElementById('export-chart').addEventListener('click', exportChart);
+				document.getElementById('export-chart').addEventListener('click', () => {
+					exportChart();
+					showToast('Chart exported as PNG');
+				});
+				document.getElementById('share-link').addEventListener('click', () => {
+					syncURL();
+					navigator.clipboard.writeText(window.location.href);
+					showToast('Trend link copied to clipboard!');
+				});
+
+				loadFromURL();
+			}
+
+			// Sync filters with URL
+			function syncURL() {
+				const params = new URLSearchParams();
+				params.set('town', document.getElementById('town').value);
+				params.set('flat_type', document.getElementById('flat-type').value);
+				params.set('range', currentRange);
+				window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+			}
+
+			// Load filters from URL
+			function loadFromURL() {
+				const params = new URLSearchParams(window.location.search);
+				let hasParams = false;
+
+				if (params.has('town')) {
+					document.getElementById('town').value = params.get('town');
+					hasParams = true;
+				}
+				if (params.has('flat_type')) {
+					document.getElementById('flat-type').value = params.get('flat_type');
+					hasParams = true;
+				}
+				if (params.has('range')) {
+					currentRange = params.get('range');
+					document.querySelectorAll('.time-range-selector button').forEach(b => {
+						b.classList.toggle('active', b.dataset.range === currentRange);
+					});
+					hasParams = true;
+				}
+
+				if (hasParams) analyze();
 			}
 
 			// Format currency

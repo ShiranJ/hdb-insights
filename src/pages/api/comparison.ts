@@ -16,6 +16,9 @@ interface ComparisonResponse {
         min_price: number;
         max_price: number;
         avg_price_psm: number;
+        avg_lease: number;
+        mom_pct?: number;
+        yoy_pct?: number;
     }>;
 }
 
@@ -71,7 +74,18 @@ export const GET: APIRoute = async ({ request, locals }) => {
     }
 
     // Query D1 database
-    const { startDate, endDate } = parseDateRange(range);
+    let { startDate, endDate } = parseDateRange(range);
+
+    // Fetch extra data for trends
+    if (range === '1Y') {
+        const d = new Date(startDate);
+        d.setMonth(d.getMonth() - 1);
+        startDate = d.toISOString().split('T')[0];
+    } else if (range === '3Y' || range === '5Y') {
+        const d = new Date(startDate);
+        d.setFullYear(d.getFullYear() - 1);
+        startDate = d.toISOString().split('T')[0];
+    }
 
     try {
         // Build query dynamically based on filters
@@ -161,11 +175,28 @@ export const GET: APIRoute = async ({ request, locals }) => {
             })
         );
 
+        const dataWithTrends = dataWithMedian.map((item, index, array) => {
+            let mom_pct: number | undefined;
+            if (index < array.length - 1) {
+                const prev = array[index + 1];
+                mom_pct = Math.round(((item.median_price - prev.median_price) / prev.median_price * 100) * 10) / 10;
+            }
+
+            let yoy_pct: number | undefined;
+            const yoyIndex = index + 12;
+            if (yoyIndex < array.length) {
+                const yearAgo = array[yoyIndex];
+                yoy_pct = Math.round(((item.median_price - yearAgo.median_price) / yearAgo.median_price * 100) * 10) / 10;
+            }
+
+            return { ...item, mom_pct, yoy_pct };
+        });
+
         const responseData: ComparisonResponse = {
             town,
             flat_type: flatType,
             range,
-            data: dataWithMedian
+            data: dataWithTrends
         };
 
         // Cache the result

@@ -59,20 +59,54 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 							<label class="checkbox-item">
 								<input type="checkbox" value="5 ROOM" checked> 5 Room
 							</label>
-							<label class="checkbox-item">
-								<input type="checkbox" value="EXECUTIVE"> Exec
-							</label>
 						</div>
 					</div>
-					<div class="filter-group" style="flex: 0;">
-						<button class="btn btn-primary" id="search-btn">
-							<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
-								<circle cx="11" cy="11" r="8"></circle>
-								<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-							</svg>Find Best Values
-						</button>
-					</div>
 				</div>
+
+				<!-- Advanced Filters -->
+				<div style="margin-top: 1.5rem; border-top: 1px solid var(--hdb-border); padding-top: 1.5rem;">
+					<details class="advanced-filters">
+						<summary style="cursor: pointer; font-weight: 600; color: var(--hdb-teal); display: flex; align-items: center; gap: 0.5rem; user-select: none;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+								<circle cx="12" cy="12" r="3"></circle>
+								<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+							</svg>
+							Advanced Filters
+						</summary>
+						<div class="filters-grid" style="margin-top: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+							<div class="filter-item">
+								<label>Storey Range</label>
+								<select id="storey">
+									<option value="">Any</option>
+									<option value="01 TO 03">01-03</option>
+									<option value="04 TO 06">04-06</option>
+									<option value="07 TO 09">07-09</option>
+									<option value="10 TO 12">10-12</option>
+									<option value="13 TO 15">13-15</option>
+									<option value="16 TO 18">16-18</option>
+									<option value="19 TO 21">19-21</option>
+									<option value="22 TO 24">22-24</option>
+									<option value="25 TO 27">25-27</option>
+									<option value="28 TO 30">28-30</option>
+									<option value="31 TO 33">31-33</option>
+									<option value="34 TO 36">34-36</option>
+									<option value="37 TO 39">37-39</option>
+									<option value="40 TO 42">40-42</option>
+								</select>
+							</div>
+							<div class="filter-item">
+								<label>Min Floor Area (sqm)</label>
+								<input type="number" id="min-area" placeholder="e.g. 90" min="0">
+							</div>
+							<div class="filter-item">
+								<label>Max Floor Area (sqm)</label>
+								<input type="number" id="max-area" placeholder="e.g. 120" min="0">
+							</div>
+						</div>
+					</details>
+				</div>
+
+				<div style="margin-top: 2rem; display: flex; gap: 1rem;">
 
 				<details style="margin-top: 1rem;">
 					<summary style="cursor: pointer; color: var(--hdb-teal); font-weight: 600;">
@@ -128,8 +162,16 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 					<h3 style="margin: 0; color: var(--hdb-text); font-size: 1.5rem;">
 						<span id="results-count">0</span> Units Found
 					</h3>
-					<div style="color: var(--hdb-text-muted); font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
-						Sorted by Value Score
+					<div style="display: flex; align-items: center; gap: 1rem;">
+						<button id="share-link" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.8125rem;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+								<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+								<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+							</svg>Share Search
+						</button>
+						<div style="color: var(--hdb-text-muted); font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+							Sorted by Value Score
+						</div>
 					</div>
 				</div>
 				<div id="results-grid" class="cards-grid"></div>
@@ -148,6 +190,8 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 		</main>
 		<Footer />
 
+		<div class="toast-container" id="toast-container"></div>
+
 		<script is:inline>
 			const HDB_TOWNS = [
 				'ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH',
@@ -159,6 +203,29 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 			];
 
 			let selectedTowns = new Set();
+
+			function showToast(message, type = 'success') {
+				const container = document.getElementById('toast-container');
+				const toast = document.createElement('div');
+				toast.className = `toast toast-${type}`;
+				toast.innerHTML = `
+					<svg class="toast-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+						<polyline points="22 4 12 14.01 9 11.01"></polyline>
+					</svg>
+					<span>${message}</span>
+				`;
+				container.appendChild(toast);
+				
+				// Force reflow
+				toast.offsetHeight;
+				toast.classList.add('show');
+				
+				setTimeout(() => {
+					toast.classList.remove('show');
+					setTimeout(() => toast.remove(), 400);
+				}, 3000);
+			}
 
 			// Initialize towns filter
 			function initTownsFilter() {
@@ -335,6 +402,16 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 				if (budgetMax) params.set('budget_max', budgetMax);
 				if (flatTypes.length > 0) params.set('flat_types', flatTypes.join(','));
 				if (selectedTowns.size > 0) params.set('towns', Array.from(selectedTowns).join(','));
+				
+				// Advanced filters
+				const storey = document.getElementById('storey').value;
+				const minArea = document.getElementById('min-area').value;
+				const maxArea = document.getElementById('max-area').value;
+
+				if (storey) params.set('storey', storey);
+				if (minArea) params.set('min_area', minArea);
+				if (maxArea) params.set('max_area', maxArea);
+
 				params.set('limit', '20');
 
 				// Show loading
@@ -367,11 +444,108 @@ const description = 'Find the best value HDB flats with our automated scoring sy
 				}
 			}
 
+			// Sync filters with URL
+			function syncURL() {
+				const params = new URLSearchParams();
+				params.set('min_score', document.getElementById('min-score').value);
+				
+				const budgetMin = document.getElementById('budget-min').value;
+				const budgetMax = document.getElementById('budget-max').value;
+				if (budgetMin) params.set('budget_min', budgetMin);
+				if (budgetMax) params.set('budget_max', budgetMax);
+				
+				const flatTypes = Array.from(document.querySelectorAll('#flat-types-container input:checked')).map(cb => cb.value);
+				if (flatTypes.length > 0) params.set('flat_types', flatTypes.join(','));
+				
+				if (selectedTowns.size > 0) params.set('towns', Array.from(selectedTowns).join(','));
+
+				// Advanced filters
+				const storey = document.getElementById('storey').value;
+				const minArea = document.getElementById('min-area').value;
+				const maxArea = document.getElementById('max-area').value;
+
+				if (storey) params.set('storey', storey);
+				if (minArea) params.set('min_area', minArea);
+				if (maxArea) params.set('max_area', maxArea);
+				
+				window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+			}
+
+			// Load filters from URL
+			function loadFromURL() {
+				const params = new URLSearchParams(window.location.search);
+				let hasParams = false;
+
+				if (params.has('min_score')) {
+					document.getElementById('min-score').value = params.get('min_score');
+					hasParams = true;
+				}
+				if (params.has('budget_min')) {
+					document.getElementById('budget-min').value = params.get('budget_min');
+					hasParams = true;
+				}
+				if (params.has('budget_max')) {
+					document.getElementById('budget-max').value = params.get('budget_max');
+					hasParams = true;
+				}
+				if (params.has('flat_types')) {
+					const types = params.get('flat_types').split(',');
+					document.querySelectorAll('#flat-types-container input').forEach(cb => {
+						cb.checked = types.includes(cb.value);
+					});
+					hasParams = true;
+				}
+				if (params.has('towns')) {
+					const towns = params.get('towns').split(',');
+					towns.forEach(town => {
+						selectedTowns.add(town);
+						// Find and update button style
+						const btn = document.querySelector(`button[data-town="${town}"]`);
+						if (btn) {
+							btn.style.background = 'var(--hdb-primary)';
+							btn.style.color = 'white';
+						}
+					});
+					hasParams = true;
+				}
+
+				// Advanced filters
+				if (params.has('storey')) {
+					document.getElementById('storey').value = params.get('storey');
+					hasParams = true;
+				}
+				if (params.has('min_area')) {
+					document.getElementById('min-area').value = params.get('min_area');
+					hasParams = true;
+				}
+				if (params.has('max_area')) {
+					document.getElementById('max-area').value = params.get('max_area');
+					hasParams = true;
+				}
+
+				if (hasParams) {
+					// Open advanced filters if any are set
+					if (params.has('storey') || params.has('min_area') || params.has('max_area')) {
+						document.querySelector('.advanced-filters').open = true;
+					}
+					search();
+				}
+			}
+
 			// Initialize
 			document.addEventListener('DOMContentLoaded', () => {
 				initTownsFilter();
+				loadFromURL();
 				
-				document.getElementById('search-btn').addEventListener('click', search);
+				document.getElementById('search-btn').addEventListener('click', () => {
+					search();
+					syncURL();
+				});
+				document.getElementById('share-link').addEventListener('click', () => {
+					syncURL();
+					navigator.clipboard.writeText(window.location.href);
+					showToast('Search link copied to clipboard!');
+				});
 				document.getElementById('close-modal').addEventListener('click', () => {
 					document.getElementById('score-modal').style.display = 'none';
 				});

@@ -73,9 +73,18 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 								<option value="">Any</option>
 								<option value="01 TO 03">01-03</option>
 								<option value="04 TO 06">04-06</option>
+								<option value="07 TO 09">07-09</option>
 								<option value="10 TO 12">10-12</option>
+								<option value="13 TO 15">13-15</option>
+								<option value="16 TO 18">16-18</option>
 								<option value="19 TO 21">19-21</option>
+								<option value="22 TO 24">22-24</option>
+								<option value="25 TO 27">25-27</option>
 								<option value="28 TO 30">28-30</option>
+								<option value="31 TO 33">31-33</option>
+								<option value="34 TO 36">34-36</option>
+								<option value="37 TO 39">37-39</option>
+								<option value="40 TO 42">40-42</option>
 							</select>
 						</div>
 						<div class="filter-item">
@@ -428,6 +437,8 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 		</style>
 		<Footer />
 
+		<div class="toast-container" id="toast-container"></div>
+
 		<script is:inline>
 			const HDB_TOWNS = [
 				'ANG MO KIO', 'BEDOK', 'BISHAN', 'BUKIT BATOK', 'BUKIT MERAH',
@@ -442,6 +453,29 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 			let comparisonData = [];
 			let currentMetric = 'median_price';
 
+			function showToast(message, type = 'success') {
+				const container = document.getElementById('toast-container');
+				const toast = document.createElement('div');
+				toast.className = `toast toast-${type}`;
+				toast.innerHTML = `
+					<svg class="toast-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+						<polyline points="22 4 12 14.01 9 11.01"></polyline>
+					</svg>
+					<span>${message}</span>
+				`;
+				container.appendChild(toast);
+				
+				// Force reflow
+				toast.offsetHeight;
+				toast.classList.add('show');
+				
+				setTimeout(() => {
+					toast.classList.remove('show');
+					setTimeout(() => toast.remove(), 400);
+				}, 3000);
+			}
+
 			// Initialize town dropdowns
 			function initDropdowns() {
 				const selects = ['town1', 'town2', 'town3', 'town4'];
@@ -455,9 +489,12 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 						).join(' ');
 						select.appendChild(option);
 					});
-					// Set default values
-					if (idx === 0) select.value = 'ANG MO KIO';
-					if (idx === 1) select.value = 'BEDOK';
+					// Set default values if not current in URL
+					const params = new URLSearchParams(window.location.search);
+					if (!params.has(id)) {
+						if (idx === 0) select.value = 'ANG MO KIO';
+						if (idx === 1) select.value = 'BEDOK';
+					}
 				});
 			}
 
@@ -492,8 +529,10 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 			function createCard(data, town) {
 				const latest = data.data[0] || {};
 				const oldest = data.data[data.data.length - 1] || {};
-				const change = oldest.median_price 
-					? ((latest.median_price - oldest.median_price) / oldest.median_price * 100).toFixed(1)
+				
+				// Calculate overall period change (oldest in range to latest)
+				const periodChange = oldest.median_price 
+					? Math.round(((latest.median_price - oldest.median_price) / oldest.median_price * 100) * 10) / 10
 					: 0;
 
 				return `
@@ -507,13 +546,22 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 								<div class="stat-label">Median Price</div>
 								<div class="stat-value highlight">${formatCurrency(latest.median_price || 0)}</div>
 							</div>
-							<div class="stat-group">
-								<div class="stat-label">QoQ Trend</div>
-								<div class="stat-value ${parseFloat(change) >= 0 ? 'positive' : 'negative'}">
-									<span class="trend-icon">${parseFloat(change) >= 0 ? '↗' : '↘'}</span>
-									${Math.abs(change)}%
+							
+							<div class="stat-grid-dashboard" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 1rem;">
+								<div class="stat-item-compact">
+									<div class="stat-label">MoM Trend</div>
+									<div class="stat-value-sm" style="color: ${latest.mom_pct >= 0 ? '#22c55e' : '#ef4444'};">
+										${latest.mom_pct ? (latest.mom_pct > 0 ? '↑' : '↓') + ' ' + Math.abs(latest.mom_pct) + '%' : '-%'}
+									</div>
+								</div>
+								<div class="stat-item-compact">
+									<div class="stat-label">YoY Trend</div>
+									<div class="stat-value-sm" style="color: ${latest.yoy_pct >= 0 ? '#22c55e' : '#ef4444'};">
+										${latest.yoy_pct ? (latest.yoy_pct > 0 ? '↑' : '↓') + ' ' + Math.abs(latest.yoy_pct) + '%' : '-%'}
+									</div>
 								</div>
 							</div>
+
 							<div class="stat-grid-dashboard">
 								<div class="stat-item-compact">
 									<div class="stat-label">Volume</div>
@@ -532,8 +580,11 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 									<div class="stat-value-sm">${formatCurrency(latest.max_price || 0)}</div>
 								</div>
 							</div>
-							<div class="card-footer-info">
+							<div class="card-footer-info" style="display: flex; justify-content: space-between; align-items: center;">
 								<span>Avg Lease: <strong>${latest.avg_lease || '-'} yrs</strong></span>
+								<span style="font-size: 0.75rem; font-weight: 700; color: ${periodChange >= 0 ? '#22c55e' : '#ef4444'};">
+									Range: ${periodChange > 0 ? '↑' : '↓'} ${Math.abs(periodChange)}%
+								</span>
 							</div>
 						</div>
 					</div>
@@ -550,13 +601,6 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 
 				const datasets = comparisonData.map((item, idx) => {
 					const colors = ['#2563eb', '#0891b2', '#8b5cf6', '#22c55e'];
-					// Unwrap data.data (since item.response contains { data: ... })
-					// item.data is the actual inner data now (ComparisonResponse)
-					// Wait, fetchComparison returns wrapper { data: ..., cached_at: ... }
-					// In runComparison map: item.data = wrapper
-					// So item.data.data = ComparisonResponse
-					// item.data.data.data = Array
-					
 					return {
 						label: item.town,
 						data: item.data.data.data.slice().reverse().map(d => d[currentMetric]),
@@ -785,19 +829,21 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 					const data = await res.json();
 					
 					if (data.last_sync_at) {
-						const date = new Date(data.last_sync_at);
-						const isRecent = (Date.now() - date.getTime()) < 24 * 60 * 60 * 1000;
+						// Format relative time
+						const lastSync = new Date(data.last_sync_at);
+						const diffHrs = Math.round((new Date() - lastSync) / (1000 * 60 * 60));
+						document.getElementById('updated-time').textContent = diffHrs === 0 ? 'Just now' : `${diffHrs}h ago`;
+						document.getElementById('last-updated').style.display = 'flex';
 						
-						if (isRecent && data.records_processed > 0) {
+						if (data.records_processed > 0) {
 							document.getElementById('new-count').textContent = data.records_processed;
-							document.getElementById('sync-badge').style.display = 'block';
+							document.getElementById('sync-badge').style.display = 'flex';
+						} else {
+							document.getElementById('sync-badge').style.display = 'none';
 						}
-						
-						document.getElementById('updated-time').textContent = date.toLocaleString();
-						document.getElementById('last-updated').style.display = 'block';
 					}
 				} catch (e) {
-					console.error('Failed to fetch sync status', e);
+					console.warn('Could not fetch sync status');
 				}
 			}
 
@@ -806,7 +852,8 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 				const params = new URLSearchParams();
 				const fields = ['town1', 'town2', 'town3', 'town4', 'flat-type', 'time-range', 'storey', 'min-area', 'max-area', 'min-lease'];
 				fields.forEach(f => {
-					const val = document.getElementById(f)?.value;
+					const el = document.getElementById(f);
+					const val = el?.value;
 					if (val) params.set(f, val);
 				});
 				window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
@@ -843,10 +890,28 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 					syncURL();
 				});
 				
-				document.getElementById('refresh-btn').addEventListener('click', () => {
-					// Clear cache manually by bumping internal ver? 
-					// For now just re-run with current filters
-					runComparison();
+				document.getElementById('refresh-btn').addEventListener('click', async () => {
+					if (!confirm('Sync data from Government API? This takes ~30s.')) return;
+					
+					const btn = document.getElementById('refresh-btn');
+					btn.disabled = true;
+					showToast('Starting manual data sync...', 'info');
+					
+					try {
+						const response = await fetch('/api/cron?secret=manual-sync-trigger');
+						const data = await response.json();
+						if (data.success) {
+							showToast(`Sync complete! ${data.records_inserted} new units found.`, 'success');
+							checkSyncStatus();
+							runComparison();
+						} else {
+							showToast('Sync failed: ' + (data.error || 'Check server logs'), 'error');
+						}
+					} catch (e) {
+						showToast('Connection error: ' + e.message, 'error');
+					} finally {
+						btn.disabled = false;
+					}
 				});
 
 				document.getElementById('export-csv').addEventListener('click', exportCSV);
@@ -857,11 +922,13 @@ const description = 'Compare HDB resale prices across different estates, flat ty
 					link.download = `hdb-price-trend-${new Date().toISOString().split('T')[0]}.png`;
 					link.href = canvas.toDataURL('image/png');
 					link.click();
+					showToast('Chart exported as PNG');
 				});
 
 				document.getElementById('share-link').addEventListener('click', () => {
+					syncURL(); // Ensure URL is up to date
 					navigator.clipboard.writeText(window.location.href);
-					alert('Comparison link copied to clipboard!');
+					showToast('Comparison link copied to clipboard!');
 				});
 
 				// Chart metric controls

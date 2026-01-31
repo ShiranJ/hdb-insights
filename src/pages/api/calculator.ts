@@ -43,6 +43,12 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const flatTypes = url.searchParams.get('flat_types')?.split(',').filter(Boolean) || [];
     const budgetMin = url.searchParams.get('budget_min') ? parseInt(url.searchParams.get('budget_min')!) : null;
     const budgetMax = url.searchParams.get('budget_max') ? parseInt(url.searchParams.get('budget_max')!) : null;
+
+    // New optional filters
+    const storey = url.searchParams.get('storey');
+    const minArea = url.searchParams.get('min_area') ? parseFloat(url.searchParams.get('min_area')!) : null;
+    const maxArea = url.searchParams.get('max_area') ? parseFloat(url.searchParams.get('max_area')!) : null;
+
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
 
     const runtime = locals.runtime;
@@ -111,6 +117,20 @@ export const GET: APIRoute = async ({ request, locals }) => {
         if (budgetMax !== null) {
             query += ` AND ht.resale_price <= ?`;
             params.push(budgetMax);
+        }
+
+        // Add additional filters
+        if (storey) {
+            query += ` AND ht.storey_range = ?`;
+            params.push(storey);
+        }
+        if (minArea !== null) {
+            query += ` AND ht.floor_area_sqm >= ?`;
+            params.push(minArea);
+        }
+        if (maxArea !== null) {
+            query += ` AND ht.floor_area_sqm <= ?`;
+            params.push(maxArea);
         }
 
         query += ` ORDER BY us.total_score DESC LIMIT ?`;
